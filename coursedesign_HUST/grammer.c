@@ -1,6 +1,5 @@
 #include "grammer.h"
 
-node* root = NULL;
 keyword w;
 FILE* fp;
 
@@ -24,32 +23,27 @@ int IsIdent(keyword t)
 	else return 0;
 }
 
-node* ExternDef()
+ExternDefListNode* ExternDefList()
 {
-	keyword w = gettoken(fp);
-	//变量声明 暂时不支持初始化 不支持extern等修饰
-	if (IsVarDeclare(w))
-	{
-		w = gettoken(fp);
-		if(IsIdent(w))
-
-	}
-	else if (IsFunDeclare(w))
-	{
-	}
 }
-node* ExternDefList()//外部定义序列
+ExternDefNode* ExternDef()
+{
+	if (!IsVarDeclare(w)) return NULL;
+	ExternDefNode* edn = (ExternDefNode*)malloc(sizeof(ExternDefNode));
+	edn->fd = FunDefFun();
+	edn->vl = VarListFun();
+	return edn;
+}
+ExternDefListNode* ExternDefList()// 外部定义序列
 {
 	if (w.kind == EOF_) return NULL;
-	node* root; //生成一个外部定义序列结点root
-	root->head = (list*)malloc(sizeof(list));
-	root->head->cur = ExternDef(); //处理一个外部定义，得到一棵子树，作为root的第一棵子树
-	root->head->next->cur = ExternDefList(); //得到的子树，作为root的第二棵子树
+	ExternDefListNode* root = (ExternDefListNode*)malloc(sizeof(ExternDefListNode)); //生成一个外部定义序列结点root
+	root->edn = ExternDef(); //处理一个外部定义，得到一棵子树，作为root的第一棵子树
+	root->edln = ExternDefList(); //得到的子树，作为root的第二棵子树
 	return root;
 }
-node* GraAnalyse(FILE* fp_)
+int GraAnalyse(FILE* fp_)
 {
 	fp = fp_;
 	w = gettoken(fp);
-	if (ExternDefList()) return root;
 }
