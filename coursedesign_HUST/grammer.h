@@ -9,65 +9,66 @@
 #include <malloc.h>
 #include "lex.h"
 
-typedef struct Sentence
+typedef struct SentenceNode
 {
 
-} Sentence;
-typedef struct SentenceList
+} SentenceNode;
+typedef struct SentenceListNode
 {
-	Sentence* s;
-	SentenceList* sl;
-} SentenceList;
-typedef struct LocalVarDef
-{
-	char* TypeStatement;
-	VarList* vl;
-} LocalVarDef;
-typedef struct LocalVarList
-{
-	LocalVarDef* lv;
-	LocalVarList* lvl;
-} LocalVarList;
-typedef struct Compose
-{
-	LocalVarList* lv;
-	SentenceList* sl;
-} Compose;
-typedef struct FormFactor
+	SentenceNode* s;
+	SentenceListNode* sl;
+} SentenceListNode;
+typedef struct LocalVarDefNode
 {
 	char* TypeStatement;
+	VarListNode* vl;
+} LocalVarDefNode;
+typedef struct LocalVarListNode
+{
+	LocalVarDefNode* lv;
+	LocalVarListNode* lvl;
+} LocalVarListNode;
+typedef struct ComposeNode
+{
+	LocalVarListNode* lv;
+	SentenceListNode* sl;
+} ComposeNode;
+typedef struct FormFactorNode
+{
+	enum token_kind kind;
 	char* ident;
-} FormFactor;
-typedef struct FormFactorList
+} FormFactorNode;
+typedef struct FormFactorListNode
 {
-	FormFactor* ff;
-	FormFactorList* ffl;
-} FormFactorList;
-typedef struct FunDef
+	FormFactorNode* ff;
+	FormFactorListNode* ffl;
+} FormFactorListNode;
+typedef struct FunDefNode
 {
-	char* TypeStatement;
+	enum token_kind ReturnType;
 	char* Name;
-	FormFactorList* ffl;
-	Compose* c;
-} FunDef;
-typedef struct Var
+	FormFactorListNode* ffl;
+	ComposeNode* c;
+} FunDefNode;
+/*typedef struct VarNode
 {
 	char* ident;
-} Var;
-typedef struct VarList
+} VarNode;*/
+typedef struct VarListNode
 {
-	Var* v;
-	VarList* vl;
-} VarList;
-typedef struct ExternVarDef
+	char* ident;
+	VarListNode* vl;
+} VarListNode;
+typedef struct ExternVarDefNode
 {
-	char* TypeStatement;
-	VarList* vl;
-} ExternVarDef;
+	enum token_kind kind;
+	VarListNode* vl;
+} ExternVarDefNode;
 typedef struct ExternDefNode
 {
-	ExternVarDef* vl;
-	FunDef* fd;
+	enum token_kind kind;
+	ExternVarDefNode* vl;
+	FunDefNode* fd;
 } ExternDefNode;
 typedef struct ExternDefListNode
 {

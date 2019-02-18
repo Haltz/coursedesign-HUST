@@ -37,7 +37,6 @@ enum token_kind
 	SIGNED,
 	STATIC,
 	STRUCT,
-	SWITCH,
 	TYPEDEF,
 	UNION,
 	UNSIGNED,
