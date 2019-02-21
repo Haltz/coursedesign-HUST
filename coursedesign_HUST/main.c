@@ -15,11 +15,11 @@ int main()
 	}
 	int line = 0;
 	keyword temp;
-	temp = gettoken(fp, &line);
+	temp = gettoken(fp);
 	while (temp.kind != ERROR_TOKEN && temp.kind != EOF_)
 	{
 		printf("%d %s %d\n", temp.kind, temp.tokentext, line);
-		temp = gettoken(fp, &line);
+		temp = gettoken(fp);
 	}
 	system("pause");
 	return 0;

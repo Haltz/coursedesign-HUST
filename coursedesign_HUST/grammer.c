@@ -3,16 +3,103 @@
 keyword w;
 FILE* fp;
 
-char type[][] =
+char precede[20][20] =
 {
-	"外部变量定义",
-	"函数定义",
-	""
+	">><<<> >>>>>",
+	">><<<> >>>>>",
+	">>>><> >>>>>",
+	">>>><> >>>>>",
+	"<<<<<= >>>>>",
+	">>>>>  >>>>>",
+	"<<<<< <<<<<>",
+	"<<<<<> >>>>>",
+	"<<<<<> >>>>>",
+	"<<<<<> <<>>>",
+	"<<<<<> <<>>>",
+	"<<<<< <<<<<="
 };
+
+typedef struct OpStack
+{
+	struct OpStack* head;
+	enum token_kind op;
+} OpStack;
+
+typedef struct NumStack
+{
+	struct NumStack* head;
+	struct Child* num;
+} NumStack;
+
+//表达式结束符号endsym可以是分号，如表达式语句，可以是反小括号，作为条件时使用
+Child* Expression(int EndChar)
+{
+	OpStack* op = (OpStack*)malloc(sizeof(OpStack));
+	OpInitiate(&op);
+	NumStack* num = (NumStack*)malloc(sizeof(NumStack));
+	NumInitiate(&num);
+	OpInitiate(&op);
+	OpPush(EXCLA, &op);
+	int error = 0;
+	while (w.kind != EXCLA && op->op != EXCLA && error == 0)
+	{
+		if (w.kind == IDENT || IsConst(w))
+		{
+			NumStack* te = (NumStack*)malloc(sizeof(NumStack));
+			Child* to = (Child*)malloc(sizeof(Child));
+			strcpy(to->i, w.tokentext);
+			to->l = to->r = NULL;
+			to->op = 0;
+			te->num = to;
+			NumPush(te, &num);
+		}
+		else if (w.kind <= 31 && w.kind >= 20)
+		{
+			NumStack* t1, *t2;
+			int t;
+			Child* p = (Child*)malloc(sizeof(Child));
+			switch (precede[op->op][w.kind])
+			{
+			case'<':OpPush(w.kind, &op);
+				break;
+			case'=':if (!OpPop(&op))error++;
+				w = gettoken(fp);
+				break;
+			case'>':
+				t1 = NumPop(&num);
+				t2 = NumPop(&num);
+				t = OpPop(&op);
+				if (t1 == NULL)
+					error++;
+				if (t2 == NULL)
+					error++;
+				if (t == 0)
+					error++;
+				p->op = t;
+				p->l = t1->num;
+				p->r = t2->num;
+				p->i[0] = '\0';
+				t1->num = p;
+				NumPush(t1, &num);
+				break;
+			default:
+				if (w.kind == EndChar)
+					w.kind == EXCLA;
+				else error = 1;
+			}
+		}
+		else if (w.kind == EndChar)
+			w.kind = EXCLA;
+		else error = 1;
+	}
+	if (num != NULL && num->head == NULL && op->op == EXCLA)
+		return num->num;
+	else return NULL;
+}
 
 int IsVarDeclare(keyword t) //是否是声明变量的关键字
 {
-	if (t.kind <= VOID && t.kind >= AUTO)
+	if (t.kind <= CHAR && t.kind >= INT)
 		return 1;
 	else return 0;
 }
@@ -23,8 +110,78 @@ int IsIdent(keyword t)
 	else return 0;
 }
 
+int IsConst(keyword t)
+{
+	if (t.kind >= INT_CONST && t.kind <= CHAR_CONST)
+		return 1;
+	return 0;
+}
+int show(char* s)
+{
+	while (*s != '\0')
+		printf("%c", s++);
+}
+
 int FreeNode(VarListNode* root)
 {
+	if (root == NULL)
+		return 1;
+	VarListNode* next = root->vl;
+	if (!FreeNode(next))
+		return 0;
+	free(root);
+	return 1;
+}
+int OpInitiate(OpStack** op)
+{
+	if (*op == NULL)
+		return 0;
+	OpInitiate(&((*op)->head));
+	(*op)->head = NULL;
+	(*op)->op = ERROR_TOKEN;
+	return 0;
+}
+int OpPush(int to, OpStack** pnow)
+{
+	OpStack* t = (OpStack*)malloc(sizeof(OpStack));
+	t->op = to;
+	t->head = (*pnow);
+	(*pnow) = t;
+	return 0;
+}
+int OpPop(OpStack** pnow)
+{
+	if ((*pnow) == NULL)
+		return 0;
+	if ((*pnow)->op == EXCLA)
+		return 0;
+	int res = (*pnow)->op;
+	(*pnow) = (*pnow)->head;
+	return res;
+}
+int NumInitiate(NumStack** num)
+{
+	if (*num == NULL)
+		return 0;
+	NumInitiate(&((*num)->head));
+	(*num)->num = NULL;
+	(*num)->head = NULL;
+	return 0;
+}
+int NumPush(OpStack* to, NumStack** pnum)
+{
+	to->head = (*pnum);
+	(*pnum) = to;
+	return 0;
+}
+NumStack* NumPop(NumStack** pnum)
+{
+	if ((*pnum) == NULL)
+		return NULL;
+	NumStack *res = *pnum;
+	res->head = NULL;
+	(*pnum) = (*pnum)->head;
+	return res;
 }
 
 VarListNode* VarList()
@@ -87,12 +244,41 @@ SentenceNode* Sentence()
 	SentenceNode* s = (SentenceNode*)malloc(sizeof(SentenceNode));
 	switch (w.kind)
 	{
-	case IF://分析条件语句
+	case IF: //分析条件语句
 		w = gettoken(fp);
 		if (w.kind != LP) 
 			return NULL;
-		expression
+		s->e1 = Expression(RP);
+		s->s1 = Sentence();
+		w = gettoken(fp);
+		if (w.kind == ELSE)
+		{
+			w = gettoken(fp);
+			s->s2 = Sentence();
+			s->kind = ELSE;
+		}
+		else s->kind = IF;
+		break;
+	case LP:
+		s->kind = Expres;
+		s->e1 = Expression(SEMMI);
+		break;
+	case IDENT:
+	case INT_CONST:
+	case FLOAT_CONST:
+	case CHAR_CONST:
+		s->kind = Expres;
+		s->e1 = Expression(SEMMI);
+		if (s->e1 != NULL)
+		{
+			w = gettoken(fp);
+		}
+		else return NULL;
+		break;
+	default:
+		return NULL;
 	}
+	return s;
 }
 
 SentenceListNode* SentenceList()
@@ -172,4 +358,5 @@ int GraAnalyse(FILE* fp_)
 {
 	fp = fp_;
 	w = gettoken(fp);
+	return ExternDefList();
 }

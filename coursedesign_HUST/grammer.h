@@ -9,29 +9,44 @@
 #include <malloc.h>
 #include "lex.h"
 
+typedef struct Child
+{
+	struct Child *l;
+	struct Child *r;
+	char i[20];//name
+	enum token_kind op;//operator
+} Child;
+typedef struct VarListNode
+{
+	char* ident;
+	struct VarListNode* vl;
+} VarListNode;
 typedef struct SentenceNode
 {
-
+	struct Child* e1;
+	struct SentenceNode* s1;
+	struct SentenceNode* s2;
+	int kind;
 } SentenceNode;
 typedef struct SentenceListNode
 {
-	SentenceNode* s;
-	SentenceListNode* sl;
+	struct SentenceNode* s;
+	struct SentenceListNode* sl;
 } SentenceListNode;
 typedef struct LocalVarDefNode
 {
 	char* TypeStatement;
-	VarListNode* vl;
+	struct VarListNode* vl;
 } LocalVarDefNode;
 typedef struct LocalVarListNode
 {
-	LocalVarDefNode* lv;
-	LocalVarListNode* lvl;
+	struct LocalVarDefNode* lv;
+	struct LocalVarListNode* lvl;
 } LocalVarListNode;
 typedef struct ComposeNode
 {
-	LocalVarListNode* lv;
-	SentenceListNode* sl;
+	struct LocalVarListNode* lv;
+	struct SentenceListNode* sl;
 } ComposeNode;
 typedef struct FormFactorNode
 {
@@ -40,40 +55,31 @@ typedef struct FormFactorNode
 } FormFactorNode;
 typedef struct FormFactorListNode
 {
-	FormFactorNode* ff;
-	FormFactorListNode* ffl;
+	struct FormFactorNode* ff;
+	struct FormFactorListNode* ffl;
 } FormFactorListNode;
 typedef struct FunDefNode
 {
 	enum token_kind ReturnType;
 	char* Name;
-	FormFactorListNode* ffl;
-	ComposeNode* c;
+	struct FormFactorListNode* ffl;
+	struct ComposeNode* c;
 } FunDefNode;
-/*typedef struct VarNode
-{
-	char* ident;
-} VarNode;*/
-typedef struct VarListNode
-{
-	char* ident;
-	VarListNode* vl;
-} VarListNode;
 typedef struct ExternVarDefNode
 {
 	enum token_kind kind;
-	VarListNode* vl;
+	struct VarListNode* vl;
 } ExternVarDefNode;
 typedef struct ExternDefNode
 {
 	enum token_kind kind;
-	ExternVarDefNode* vl;
-	FunDefNode* fd;
+	struct ExternVarDefNode* vl;
+	struct FunDefNode* fd;
 } ExternDefNode;
 typedef struct ExternDefListNode
 {
-	ExternDefNode* edn;
-	ExternDefListNode* edln;
+	struct ExternDefNode* edn;
+	struct ExternDefListNode* edln;
 } ExternDefListNode;
 
 int GraAnalyse(FILE* fp_);
