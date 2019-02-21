@@ -52,7 +52,7 @@ typedef struct ComposeNode
 typedef struct FormFactorNode
 {
 	enum token_kind kind;
-	char* ident;
+	char ident[20];
 } FormFactorNode;
 typedef struct FormFactorListNode
 {
@@ -61,8 +61,7 @@ typedef struct FormFactorListNode
 } FormFactorListNode;
 typedef struct FunDefNode
 {
-	enum token_kind ReturnType;
-	char* Name;
+	char name[20];
 	struct FormFactorListNode* ffl;
 	struct ComposeNode* c;
 } FunDefNode;
@@ -74,7 +73,7 @@ typedef struct ExternVarDefNode
 typedef struct ExternDefNode
 {
 	enum token_kind kind;
-	struct ExternVarDefNode* evd;
+	struct VarListNode* evd;
 	struct FunDefNode* fd;
 } ExternDefNode;
 typedef struct ExternDefListNode

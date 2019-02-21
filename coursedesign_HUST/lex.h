@@ -12,6 +12,7 @@ typedef struct Keyword
 {
 	char tokentext[20];
 	enum token_kind kind;
+	int line;
 } keyword;
 
 enum token_kind

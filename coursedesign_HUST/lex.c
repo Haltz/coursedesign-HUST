@@ -1,6 +1,6 @@
 #include "lex.h"
 
-char readchar(FILE* fp, int* pline);//用于方便的读取字符并记录行数
+char readchar(FILE* fp);//用于方便的读取字符并记录行数
 int findkey(char* st);//判断是否为关键字
 
 char key_word[100][30] =
@@ -14,13 +14,12 @@ char key_word[100][30] =
 };
 
 keyword ans;
-static int line = 0;
-static int* pline = &line;
+int line = 0;
 
-char readchar(FILE* fp, int* pline)
+char readchar(FILE* fp)
 {
 	char ch = fgetc(fp);
-	if (ch == '\n') (*pline) ++;
+	if (ch == '\n') line ++;
 	return ch;
 }
 
@@ -40,7 +39,7 @@ keyword gettoken(FILE* fp)
 		ans.tokentext[i] = '\0';
 	char ch;
 	//跳过空字符
-	while ((ch = readchar(fp, pline)) == ' ' || ch == '\n' || ch == '\t');
+	while ((ch = readchar(fp)) == ' ' || ch == '\n' || ch == '\t');
 	//数字串 此处十六进制和八进制只支持整数
 	if (ch <= '9'&&ch >= '0')
 	{
@@ -48,12 +47,12 @@ keyword gettoken(FILE* fp)
 		ans.tokentext[j++] = ch;
 		if (ch == '0')
 		{
-			ch = readchar(fp, pline);
+			ch = readchar(fp);
 			//十六进制
 			if (ch == 'x')
 			{
 				ans.tokentext[j++] = ch;
-				ch = readchar(fp, pline);
+				ch = readchar(fp);
 				//出错
 				if (ch == '0') { ans.kind = ERROR_TOKEN; ungetc(ch, fp); }
 				//未出错
@@ -62,7 +61,7 @@ keyword gettoken(FILE* fp)
 					do
 					{
 						ans.tokentext[j++] = ch;
-					} while ((ch = readchar(fp, pline)) <= '9'&&ch >= '0');
+					} while ((ch = readchar(fp)) <= '9'&&ch >= '0');
 					ans.kind = INT_CONST;
 					ungetc(ch, fp);
 				}
@@ -82,7 +81,7 @@ keyword gettoken(FILE* fp)
 					do
 					{
 						ans.tokentext[j++] = ch;
-					} while ((ch = readchar(fp, pline)) <= '9'&&ch >= '0');
+					} while ((ch = readchar(fp)) <= '9'&&ch >= '0');
 					ans.kind = INT_CONST;
 					ungetc(ch, fp);
 				}
@@ -101,7 +100,7 @@ keyword gettoken(FILE* fp)
 			{
 				ans.tokentext[j++] = ch;
 				if (ch == '.') fl = 1;
-			} while ((ch = readchar(fp, pline)) == '.' || (ch <= '9'&&ch >= '0'));
+			} while ((ch = readchar(fp)) == '.' || (ch <= '9'&&ch >= '0'));
 			if (fl == 0) ans.kind = INT_CONST;
 			else ans.kind = FLOAT_CONST;
 			ungetc(ch, fp);
@@ -114,7 +113,7 @@ keyword gettoken(FILE* fp)
 		do 
 		{
 			ans.tokentext[j++] = ch;
-		} while ((ch = readchar(fp, pline)) && ((ch <= 'z'&&ch >= 'a') || (ch <= 'Z'&&ch >= 'A') || ch == '_' || (ch <= '9'&&ch >= '0')));
+		} while ((ch = readchar(fp)) && ((ch <= 'z'&&ch >= 'a') || (ch <= 'Z'&&ch >= 'A') || ch == '_' || (ch <= '9'&&ch >= '0')));
 		ungetc(ch, fp);
 		if ((ans.kind = findkey(ans.tokentext)) != 0)
 		{
@@ -127,12 +126,14 @@ keyword gettoken(FILE* fp)
 			case 6:strcpy(ans.tokentext, "else"); break;
 			case 7:strcpy(ans.tokentext, "return"); break;
 			}
+			ans.line = line;
 			return ans;
 		}//判断是否是关键字
 		else
 		{
 			//表示是一个普通的标识符
 			ans.kind = IDENT;
+			ans.line = line;
 			return ans;
 		}
 	}
@@ -154,8 +155,8 @@ keyword gettoken(FILE* fp)
 	case ';': ans.kind = SEMMI; strcpy(ans.tokentext, ";"); break;
 	case '?': ans.kind = QUESTION; strcpy(ans.tokentext, ch); break;
 	case '.': ans.kind = DOT; strcpy(ans.tokentext, ch); break;
-	case '<': if ((ch = readchar(fp, pline)) == '<')
-		if ((ch = readchar(fp, pline)) == '=')
+	case '<': if ((ch = readchar(fp)) == '<')
+		if ((ch = readchar(fp)) == '=')
 		{
 			ans.kind = LMOVEEQ;
 			strcpy(ans.tokentext, "<<=");
@@ -166,46 +167,47 @@ keyword gettoken(FILE* fp)
 			  }
 			  else { ans.kind = LESS; strcpy(ans.tokentext, "<"); ungetc(ch, fp); }
 			  break;
-	case '>': if ((ch = readchar(fp, pline)) == '>')
-		if ((ch = readchar(fp, pline)) == '=') { ans.kind = RMOVEEQ; strcpy(ans.tokentext, ">>="); }
+	case '>': if ((ch = readchar(fp)) == '>')
+		if ((ch = readchar(fp)) == '=') { ans.kind = RMOVEEQ; strcpy(ans.tokentext, ">>="); }
 		else { ans.kind = RMOVE; strcpy(ans.tokentext, ">>"); ungetc(ch, fp); }
 			  else if (ch == '=') { ans.kind = MOREEQ; strcpy(ans.tokentext, ">="); }
 			  else { ans.kind = MORE; strcpy(ans.tokentext, ">"); ungetc(ch, fp); }
 			  break;
-	case '!': if ((ch = readchar(fp, pline)) == '=') { ans.kind = UNEQUAL; strcpy(ans.tokentext, "!="); }
+	case '!': if ((ch = readchar(fp)) == '=') { ans.kind = UNEQUAL; strcpy(ans.tokentext, "!="); }
 			  else { ans.kind = EXCLA; strcpy(ans.tokentext, "!"); ungetc(ch, fp); }
 			  break;
-	case '^': if ((ch = readchar(fp, pline)) == '=') { ans.kind = XOREQ; strcpy(ans.tokentext, "^="); }
+	case '^': if ((ch = readchar(fp)) == '=') { ans.kind = XOREQ; strcpy(ans.tokentext, "^="); }
 			  else { ans.kind = XOR; strcpy(ans.tokentext, "^"); ungetc(ch, fp); }
 			  break;
-	case '&': if ((ch = readchar(fp, pline)) == '&') { ans.kind = ANDAND; strcpy(ans.tokentext, "&&"); }
+	case '&': if ((ch = readchar(fp)) == '&') { ans.kind = ANDAND; strcpy(ans.tokentext, "&&"); }
 			  else if (ch == '=') { ans.kind = ANDEQ; strcpy(ans.tokentext, "&="); }
 			  else { ans.kind = AND; strcpy(ans.tokentext, "&"); ungetc(ch, fp); }
 			  break;
-	case '|': if ((ch = readchar(fp, pline)) == '|') ans.kind = OROR;
+	case '|': if ((ch = readchar(fp)) == '|') ans.kind = OROR;
 			  else if (ch == '=') ans.kind = OREQ;
 			  else { ans.kind = OR; ungetc(ch, fp); }
 			  break;
-	case '*': if ((ch = readchar(fp, pline)) == '=') ans.kind = MULEQ;
+	case '*': if ((ch = readchar(fp)) == '=') ans.kind = MULEQ;
 			  else { ans.kind = MUL; ungetc(ch, fp); }
 			  break;
-	case '-': if ((ch = readchar(fp, pline)) == '-') ans.kind = MINUSMINUS;
+	case '-': if ((ch = readchar(fp)) == '-') ans.kind = MINUSMINUS;
 			  else if (ch == '=') ans.kind = MINUSEQ;
 			  else { ans.kind = MINUS; ungetc(ch, fp); }
 			  break;
-	case '+': if ((ch = readchar(fp, pline)) == '+') { ans.kind = PLUSPLUS; strcpy(ans.tokentext, "++"); }
+	case '+': if ((ch = readchar(fp)) == '+') { ans.kind = PLUSPLUS; strcpy(ans.tokentext, "++"); }
 			  else if (ch == '=') {ans.kind = PLUSEQ; strcpy(ans.tokentext, "+=");}
 			  else { ans.kind = PLUS; strcpy(ans.tokentext, "+"); ungetc(ch, fp); }
 			  break;
-	case '=': if ((ch = readchar(fp, pline)) == '=') { ans.kind = EQUAL; strcpy(ans.tokentext, "==");}
+	case '=': if ((ch = readchar(fp)) == '=') { ans.kind = EQUAL; strcpy(ans.tokentext, "==");}
 			  else { ans.kind = ASSIGN; strcpy(ans.tokentext, "="); ungetc(ch, fp); }
 			  break;
-	case '/': if ((ch = readchar(fp, pline)) == '/') { ans.kind = COMMENT; strcpy(ans.tokentext, "//");}
+	case '/': if ((ch = readchar(fp)) == '/') { ans.kind = COMMENT; strcpy(ans.tokentext, "//");}
 			  else if (ch == '=') { ans.kind = DIVEQ; strcpy(ans.tokentext, "/=");}
 			  else { ans.kind = DIV; strcpy(ans.tokentext, "/"); ungetc(ch, fp); }
 			  break;
 	default: if (feof(fp)) ans.kind = EOF_;
 			 else ans.kind = ERROR_TOKEN;
 	}
+	ans.line = line;
 	return ans;
 }

@@ -190,20 +190,28 @@ Child* Expression(int EndChar)
 	else return NULL;
 }
 
-VarListNode* VarList()
+VarListNode* VarList()//ÒÑ¾­¶ÁÈëÁËµÚÒ»¸ö±äÁ¿ done
 {
+	if (w.kind != IDENT)
+	{
+		err++;
+		printf("line: %d error: not ident\n", w.line);
+	}
 	VarListNode* vl = (VarListNode*)malloc(sizeof(VarListNode));
-	vl->ident = w.tokentext;
+	strcpy(vl->ident, w.tokentext);
 	w = gettoken(fp);
 	if (w.kind != COMMA && w.kind != SEMMI)
-		FreeNode(vl);
+	{
+		err++;
+		printf("line: %d error: lack of comma or semmi\n");
+		return NULL;
+	}
 	if (w.kind == SEMMI)
 	{
 		w = gettoken(fp);
 		return vl;
 	}
 	w = gettoken(fp);
-	if (w.kind != IDENT) FreeNode(vl);
 	vl->vl = VarList();
 	return vl;
 }
@@ -353,6 +361,7 @@ ExternDefNode* ExternDef() //´¦ÀíÍâ²¿¶¨ÒåĞòÁĞ£¬ÕıÈ·Ê±£¬·µ»Ø×ÓÊ÷¸ù½áµãÖ¸Õë£¬·ñÔò·
 	if (!IsVarDeclare(w) && w.kind != EOF_)
 	{
 		err++;
+		printf("line: %d  error: VarDeclare\n", w.line);
 		return NULL;
 	}
 	ExternDefNode* edn = (ExternDefNode*)malloc(sizeof(ExternDefNode));
@@ -360,7 +369,11 @@ ExternDefNode* ExternDef() //´¦ÀíÍâ²¿¶¨ÒåĞòÁĞ£¬ÕıÈ·Ê±£¬·µ»Ø×ÓÊ÷¸ù½áµãÖ¸Õë£¬·ñÔò·
 	keyword wcopy = w;
 	w = gettoken(fp);
 	if (w.kind == LP) edn->fd = FunDef(wcopy);
-	else edn->evd = VarList();
+	else
+	{
+		w = gettoken(fp);
+		edn->evd = VarList();
+	}
 	return edn;
 }
 
@@ -407,5 +420,5 @@ int output(ExternDefListNode* root)
 		put(root->edn->evd->vl);//varlist output
 		putchar('\n');
 	}
-	printf("Íâ²¿º¯Êı¶¨Òå£º");
+	printf("Íâ²¿º¯Êı¶¨Òå£º\n");
 }
