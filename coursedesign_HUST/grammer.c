@@ -3,6 +3,9 @@
 keyword w;
 FILE* fp;
 
+int line = 0;
+int err = 0;
+
 char precede[20][20] =
 {
 	">><<<> >>>>>",
@@ -30,6 +33,96 @@ typedef struct NumStack
 	struct NumStack* head;
 	struct Child* num;
 } NumStack;
+
+int IsVarDeclare(keyword t) //ÊÇ·ñÊÇÉùÃ÷±äÁ¿µÄ¹Ø¼ü×Ö
+{
+	if (t.kind <= CHAR && t.kind >= INT)
+		return 1;
+	else return 0;
+}
+
+int IsIdent(keyword t)
+{
+	if (t.kind == IDENT) return 1;
+	else return 0;
+}
+
+int IsConst(keyword t)
+{
+	if (t.kind >= INT_CONST && t.kind <= CHAR_CONST)
+		return 1;
+	return 0;
+}
+int show(char* s)
+{
+	while (*s != '\0')
+	{
+		putchar(*s);
+		s++;
+	}
+}
+
+int FreeNode(VarListNode* root)
+{
+	if (root == NULL)
+		return 1;
+	VarListNode* next = root->vl;
+	if (!FreeNode(next))
+		return 0;
+	free(root);
+	return 1;
+}
+int OpInitiate(OpStack** op)
+{
+	if (*op == NULL)
+		return 0;
+	OpInitiate(&((*op)->head));
+	(*op)->head = NULL;
+	(*op)->op = ERROR_TOKEN;
+	return 0;
+}
+int OpPush(int to, OpStack** pnow)
+{
+	OpStack* t = (OpStack*)malloc(sizeof(OpStack));
+	t->op = to;
+	t->head = (*pnow);
+	(*pnow) = t;
+	return 0;
+}
+int OpPop(OpStack** pnow)
+{
+	if ((*pnow) == NULL)
+		return 0;
+	if ((*pnow)->op == EXCLA)
+		return 0;
+	int res = (*pnow)->op;
+	(*pnow) = (*pnow)->head;
+	return res;
+}
+int NumInitiate(NumStack** num)
+{
+	if (*num == NULL)
+		return 0;
+	NumInitiate(&((*num)->head));
+	(*num)->num = NULL;
+	(*num)->head = NULL;
+	return 0;
+}
+int NumPush(NumStack* to, NumStack** pnum)
+{
+	to->head = (*pnum);
+	(*pnum) = to;
+	return 0;
+}
+NumStack* NumPop(NumStack** pnum)
+{
+	if ((*pnum) == NULL)
+		return NULL;
+	NumStack *res = *pnum;
+	res->head = NULL;
+	(*pnum) = (*pnum)->head;
+	return res;
+}
 
 //±í´ïÊ½½áÊø·ûºÅendsym¿ÉÒÔÊÇ·ÖºÅ£¬Èç±í´ïÊ½Óï¾ä£¬¿ÉÒÔÊÇ·´Ğ¡À¨ºÅ£¬×÷ÎªÌõ¼şÊ±Ê¹ÓÃ
 Child* Expression(int EndChar)
@@ -84,7 +177,7 @@ Child* Expression(int EndChar)
 				break;
 			default:
 				if (w.kind == EndChar)
-					w.kind == EXCLA;
+					w.kind = EXCLA;
 				else error = 1;
 			}
 		}
@@ -97,109 +190,22 @@ Child* Expression(int EndChar)
 	else return NULL;
 }
 
-int IsVarDeclare(keyword t) //ÊÇ·ñÊÇÉùÃ÷±äÁ¿µÄ¹Ø¼ü×Ö
-{
-	if (t.kind <= CHAR && t.kind >= INT)
-		return 1;
-	else return 0;
-}
-
-int IsIdent(keyword t)
-{
-	if (t.kind == IDENT) return 1;
-	else return 0;
-}
-
-int IsConst(keyword t)
-{
-	if (t.kind >= INT_CONST && t.kind <= CHAR_CONST)
-		return 1;
-	return 0;
-}
-int show(char* s)
-{
-	while (*s != '\0')
-		printf("%c", s++);
-}
-
-int FreeNode(VarListNode* root)
-{
-	if (root == NULL)
-		return 1;
-	VarListNode* next = root->vl;
-	if (!FreeNode(next))
-		return 0;
-	free(root);
-	return 1;
-}
-int OpInitiate(OpStack** op)
-{
-	if (*op == NULL)
-		return 0;
-	OpInitiate(&((*op)->head));
-	(*op)->head = NULL;
-	(*op)->op = ERROR_TOKEN;
-	return 0;
-}
-int OpPush(int to, OpStack** pnow)
-{
-	OpStack* t = (OpStack*)malloc(sizeof(OpStack));
-	t->op = to;
-	t->head = (*pnow);
-	(*pnow) = t;
-	return 0;
-}
-int OpPop(OpStack** pnow)
-{
-	if ((*pnow) == NULL)
-		return 0;
-	if ((*pnow)->op == EXCLA)
-		return 0;
-	int res = (*pnow)->op;
-	(*pnow) = (*pnow)->head;
-	return res;
-}
-int NumInitiate(NumStack** num)
-{
-	if (*num == NULL)
-		return 0;
-	NumInitiate(&((*num)->head));
-	(*num)->num = NULL;
-	(*num)->head = NULL;
-	return 0;
-}
-int NumPush(OpStack* to, NumStack** pnum)
-{
-	to->head = (*pnum);
-	(*pnum) = to;
-	return 0;
-}
-NumStack* NumPop(NumStack** pnum)
-{
-	if ((*pnum) == NULL)
-		return NULL;
-	NumStack *res = *pnum;
-	res->head = NULL;
-	(*pnum) = (*pnum)->head;
-	return res;
-}
-
 VarListNode* VarList()
 {
 	VarListNode* vl = (VarListNode*)malloc(sizeof(VarListNode));
 	vl->ident = w.tokentext;
 	w = gettoken(fp);
-		if (w.kind != COMMA && w.kind != SEMMI)
-			FreeNode(vl);
-		if (w.kind == SEMMI)
-		{
-			w = gettoken(fp);
-			return vl;
-		}
+	if (w.kind != COMMA && w.kind != SEMMI)
+		FreeNode(vl);
+	if (w.kind == SEMMI)
+	{
 		w = gettoken(fp);
-		if (w.kind != IDENT) FreeNode(vl);
-		vl->vl = VarList();
 		return vl;
+	}
+	w = gettoken(fp);
+	if (w.kind != IDENT) FreeNode(vl);
+	vl->vl = VarList();
+	return vl;
 }
 //µ÷ÓÃ´Ë×Ó³ÌĞòÊ±£¬Íâ²¿±äÁ¿ÀàĞÍºÍµÚÒ»¸ö±äÁ¿ÃûµÄµ¥´ÊÒÑ¾­¶ÁÈë£¬
 //±äÁ¿Ãû±£´æÔÚtokenText0ÖĞ£¬ÕâÊ±Íâ²¿±äÁ¿¶¨ÒåµÄ´¦ÀíÁ÷³Ì¿É²Î¿¼ÈçÏÂ¡£
@@ -246,7 +252,7 @@ SentenceNode* Sentence()
 	{
 	case IF: //·ÖÎöÌõ¼şÓï¾ä
 		w = gettoken(fp);
-		if (w.kind != LP) 
+		if (w.kind != LP)
 			return NULL;
 		s->e1 = Expression(RP);
 		s->s1 = Sentence();
@@ -294,6 +300,22 @@ SentenceListNode* SentenceList()
 		return sl;
 	}
 }
+LocalVarDefNode* LocalVarDef()
+{
+	LocalVarDefNode* lvd = (LocalVarDefNode*)malloc(sizeof(LocalVarDefNode));
+	strcpy(lvd->TypeStatement, w.tokentext);
+	w = gettoken(fp);
+	if (w.kind != IDENT)
+		return NULL;
+	else strcpy(lvd->name, w.tokentext);
+	w = gettoken(fp);
+	if (w.kind != SEMMI)
+		return NULL;
+	w = gettoken(fp);
+	if (IsVarDeclare(w))
+		lvd->vl = LocalVarDef();
+	return lvd;
+}
 
 //µ÷ÓÃ´Ë×Ó³ÌĞòÊ±£¬ÒÑ¾­¶ÁÈëÁËµ¥´Ê{£¬¼ÌĞø´¦ÀíÊ±£¬Óöµ½Óöµ½}£¬½áÊø¸´ºÏÓï¾ä
 ComposeNode* Compose()
@@ -321,21 +343,24 @@ FunDefNode* FunDef(keyword copy)
 	fd->ffl = FormFactorList();
 	w = gettoken(fp);
 	if (w.kind == SEMMI) fd->c = NULL;
-	else if(w.kind == RCURLY) fd->c = Compose();
+	else if (w.kind == RCURLY) fd->c = Compose();
 }
 
 //´Ë×Ó³ÌĞòÍê³ÉÒ»¸öÍâ²¿¶¨ÒåµÄ´¦Àí£¬µ÷ÓÃ´Ë×Ó³ÌĞòÊ±£¬ÒÑ¾­¶ÁÈëÁËÒ»¸öÍâ²¿¶¨ÒåµÄµÚÒ»¸öµ¥´Êµ½wÖĞ¡£
 //¸Ã×Ó³ÌĞò´¦ÀíÍêºó£¬¸ÕºÃ´¦Àíµ½Íâ²¿¶¨ÒåµÄ×îºóÒ»¸ö·ûºÅ£¬ºóĞøµ¥´Ê»¹Ã»¶ÁÈë¡£
 ExternDefNode* ExternDef() //´¦ÀíÍâ²¿¶¨ÒåĞòÁĞ£¬ÕıÈ·Ê±£¬·µ»Ø×ÓÊ÷¸ù½áµãÖ¸Õë£¬·ñÔò·µ»ØNULL
-//
 {
-	if (!IsVarDeclare(w)) return NULL;
+	if (!IsVarDeclare(w) && w.kind != EOF_)
+	{
+		err++;
+		return NULL;
+	}
 	ExternDefNode* edn = (ExternDefNode*)malloc(sizeof(ExternDefNode));
 	edn->kind = w.kind;
 	keyword wcopy = w;
 	w = gettoken(fp);
-	if(w.kind == LP) edn->fd = FunDef(wcopy);
-	else edn->vl = VarList();
+	if (w.kind == LP) edn->fd = FunDef(wcopy);
+	else edn->evd = VarList();
 	return edn;
 }
 
@@ -343,12 +368,14 @@ ExternDefNode* ExternDef() //´¦ÀíÍâ²¿¶¨ÒåĞòÁĞ£¬ÕıÈ·Ê±£¬·µ»Ø×ÓÊ÷¸ù½áµãÖ¸Õë£¬·ñÔò·
 //<Íâ²¿¶¨ÒåĞòÁĞ>£º£º = <Íâ²¿¶¨Òå> <Íâ²¿¶¨ÒåĞòÁĞ> | <Íâ²¿¶¨Òå>
 //ÕâÊÇÒ»¸öµİ¹é¶¨Òå£¬¸Ã×Ó³ÌĞò´¦ÀíÒ»ÏµÁĞµÄÍâ²¿¶¨Òå£¬Ã¿¸öÍâ²¿¶¨ÒåĞòÁĞµÄ½áµã£¬ÆäµÚÒ»¸ö×ÓÊ÷¶ÔÓ¦Ò»¸öÍâ²¿¶¨Òå£¬µÚ¶ş¿Ã×ÓÊ÷¶ÔÓ¦ºóĞøµÄÍâ²¿¶¨Òå¡£
 //ÔÚÒ»¸öÔ´³ÌĞòÖĞ£¬Ã¿´Î³É¹¦´¦ÀíÍêÒ»¸öÍâ²¿¶¨Òåºó£¬Èç¹ûÓöµ½ÎÄ¼ş½áÊø±ê¼Ç£¬ÔòÓï·¨·ÖÎö½áÊø¡£µ÷ÓÃ´Ë×Ó³ÌĞò£¬ÒÑ¾­¶ÁÈëÁËÒ»¸öÍâ²¿¶¨ÒåµÄµÚÒ»¸öµ¥´Êµ½wÖĞ¡£
-ExternDefListNode* ExternDefList()// Íâ²¿¶¨ÒåĞòÁĞ
+ExternDefListNode* ExternDefList()// Íâ²¿¶¨ÒåĞòÁĞ done
 {
 	if (w.kind = EOF_) return NULL;
 	ExternDefListNode* root = (ExternDefListNode*)malloc(sizeof(ExternDefListNode)); //Éú³ÉÒ»¸öÍâ²¿¶¨ÒåĞòÁĞ½áµãroot
 	root->edn = ExternDef(); //´¦ÀíÒ»¸öÍâ²¿¶¨Òå£¬µÃµ½Ò»¿Ã×ÓÊ÷£¬×÷ÎªrootµÄµÚÒ»¿Ã×ÓÊ÷
 	root->edln = ExternDefList(); //µÃµ½µÄ×ÓÊ÷£¬×÷ÎªrootµÄµÚ¶ş¿Ã×ÓÊ÷
+	if (root->edn == NULL)
+		return NULL;
 	return root;
 }
 
@@ -359,4 +386,26 @@ int GraAnalyse(FILE* fp_)
 	fp = fp_;
 	w = gettoken(fp);
 	return ExternDefList();
+}
+
+int output(ExternDefListNode* root)
+{
+	int blank = 0;
+	if (root == NULL)
+	{
+		printf("ERROR!\n");
+		return 0;
+	}
+	printf("Íâ²¿±äÁ¿¶¨Òå£º\n");
+	ExternDefListNode* edl = root;
+	if (root->edn->evd == NULL)
+		printf(" ÎŞÍâ²¿±äÁ¿¶¨Òå\n");
+	else
+	{
+		printf(" ÀàĞÍËµÃ÷·û£º%s\n", type[root->edn->kind]);
+		printf(" ±äÁ¿ĞòÁĞ£º");
+		put(root->edn->evd->vl);//varlist output
+		putchar('\n');
+	}
+	printf("Íâ²¿º¯Êı¶¨Òå£º");
 }

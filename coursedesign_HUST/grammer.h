@@ -35,8 +35,9 @@ typedef struct SentenceListNode
 } SentenceListNode;
 typedef struct LocalVarDefNode
 {
-	char* TypeStatement;
-	struct VarListNode* vl;
+	char TypeStatement[20];
+	char name[20];
+	struct LocalVarListNode* vl;
 } LocalVarDefNode;
 typedef struct LocalVarListNode
 {
@@ -73,7 +74,7 @@ typedef struct ExternVarDefNode
 typedef struct ExternDefNode
 {
 	enum token_kind kind;
-	struct ExternVarDefNode* vl;
+	struct ExternVarDefNode* evd;
 	struct FunDefNode* fd;
 } ExternDefNode;
 typedef struct ExternDefListNode
@@ -83,5 +84,6 @@ typedef struct ExternDefListNode
 } ExternDefListNode;
 
 int GraAnalyse(FILE* fp_);
+int output(ExternDefListNode* root);
 
 #endif
