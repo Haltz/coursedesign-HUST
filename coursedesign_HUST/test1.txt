@@ -1,0 +1,10 @@
+int a;
+float b;
+char c;
+int d , e;
+int main(int a,char b)
+{
+char c;
+int b;
+return a+b;
+}

@@ -18,7 +18,7 @@ typedef struct Child
 } Child;
 typedef struct VarListNode
 {
-	char* ident;
+	char ident[20];
 	struct VarListNode* vl;
 } VarListNode;
 typedef struct SentenceNode
@@ -36,27 +36,18 @@ typedef struct SentenceListNode
 typedef struct LocalVarDefNode
 {
 	char TypeStatement[20];
-	char name[20];
-	struct LocalVarListNode* vl;
+	struct VarListNode* vln;
+	struct LocalVarDefNode* lvd;
 } LocalVarDefNode;
-typedef struct LocalVarListNode
-{
-	struct LocalVarDefNode* lv;
-	struct LocalVarListNode* lvl;
-} LocalVarListNode;
 typedef struct ComposeNode
 {
-	struct LocalVarListNode* lv;
+	struct LocalVarDefNode* lv;
 	struct SentenceListNode* sl;
 } ComposeNode;
-typedef struct FormFactorNode
-{
-	enum token_kind kind;
-	char ident[20];
-} FormFactorNode;
 typedef struct FormFactorListNode
 {
-	struct FormFactorNode* ff;
+	char ident[20];
+	enum token_kind kind;
 	struct FormFactorListNode* ffl;
 } FormFactorListNode;
 typedef struct FunDefNode
@@ -82,7 +73,7 @@ typedef struct ExternDefListNode
 	struct ExternDefListNode* edln;
 } ExternDefListNode;
 
-int GraAnalyse(FILE* fp_);
+ExternDefListNode* GraAnalyse(FILE* fp_);
 int output(ExternDefListNode* root);
 
 #endif

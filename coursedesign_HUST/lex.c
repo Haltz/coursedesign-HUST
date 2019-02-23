@@ -143,18 +143,18 @@ keyword gettoken(FILE* fp)
 	case ')': ans.kind = RP; strcpy(ans.tokentext, ")"); break;
 	case '{': ans.kind = LCURLY; strcpy(ans.tokentext, "{"); break;
 	case '}': ans.kind = RCURLY; strcpy(ans.tokentext, "}"); break;
-	case '[': ans.kind = LSQUARE; strcpy(ans.tokentext, ch); break;
-	case ']': ans.kind = RSQUARE; strcpy(ans.tokentext, ch); break;
-	case '~': ans.kind = NEGATE; strcpy(ans.tokentext, ch); break;
+	case '[': ans.kind = LSQUARE; strcpy(ans.tokentext, "["); break;
+	case ']': ans.kind = RSQUARE; strcpy(ans.tokentext, "]"); break;
+	case '~': ans.kind = NEGATE; strcpy(ans.tokentext, "~"); break;
 	case '#': ans.kind = HASHTAG; strcpy(ans.tokentext, "#"); break;
-	case '%': ans.kind = PERCENT; strcpy(ans.tokentext, ch); break;
-	case '\\': ans.kind = NEGADIV; strcpy(ans.tokentext, ch); break;
+	case '%': ans.kind = PERCENT; strcpy(ans.tokentext, "%"); break;
+	case '\\': ans.kind = NEGADIV; strcpy(ans.tokentext, "\\"); break;
 	case '\'': ans.kind = SINGLE; strcpy(ans.tokentext, "'"); break;
-	case '\"': ans.kind = SINGGLESINGLE; strcpy(ans.tokentext, ch); break;
+	case '\"': ans.kind = SINGGLESINGLE; strcpy(ans.tokentext, "\""); break;
 	case ',': ans.kind = COMMA; strcpy(ans.tokentext, ","); break;
 	case ';': ans.kind = SEMMI; strcpy(ans.tokentext, ";"); break;
-	case '?': ans.kind = QUESTION; strcpy(ans.tokentext, ch); break;
-	case '.': ans.kind = DOT; strcpy(ans.tokentext, ch); break;
+	case '?': ans.kind = QUESTION; strcpy(ans.tokentext, "?"); break;
+	case '.': ans.kind = DOT; strcpy(ans.tokentext, "."); break;
 	case '<': if ((ch = readchar(fp)) == '<')
 		if ((ch = readchar(fp)) == '=')
 		{
@@ -183,16 +183,16 @@ keyword gettoken(FILE* fp)
 			  else if (ch == '=') { ans.kind = ANDEQ; strcpy(ans.tokentext, "&="); }
 			  else { ans.kind = AND; strcpy(ans.tokentext, "&"); ungetc(ch, fp); }
 			  break;
-	case '|': if ((ch = readchar(fp)) == '|') ans.kind = OROR;
-			  else if (ch == '=') ans.kind = OREQ;
-			  else { ans.kind = OR; ungetc(ch, fp); }
+	case '|': if ((ch = readchar(fp)) == '|') { ans.kind = OROR; strcpy(ans.tokentext, "||"); }
+			  else if (ch == '=') { ans.kind = OREQ; strcpy(ans.tokentext,"|="); }
+			  else { ans.kind = OR; strcpy(ans.tokentext,"|"); ungetc(ch, fp); }
 			  break;
-	case '*': if ((ch = readchar(fp)) == '=') ans.kind = MULEQ;
-			  else { ans.kind = MUL; ungetc(ch, fp); }
+	case '*': if ((ch = readchar(fp)) == '=') { ans.kind = MULEQ; strcpy(ans.tokentext, "*="); }
+			  else { ans.kind = MUL; strcpy(ans.tokentext,"*"); ungetc(ch, fp); }
 			  break;
-	case '-': if ((ch = readchar(fp)) == '-') ans.kind = MINUSMINUS;
-			  else if (ch == '=') ans.kind = MINUSEQ;
-			  else { ans.kind = MINUS; ungetc(ch, fp); }
+	case '-': if ((ch = readchar(fp)) == '-') { ans.kind = MINUSMINUS; strcpy(ans.tokentext,"--"); }
+			  else if (ch == '=') { ans.kind = MINUSEQ; strcpy(ans.tokentext,"-="); }
+			  else { ans.kind = MINUS; strcpy(ans.tokentext, "-"); ungetc(ch, fp); }
 			  break;
 	case '+': if ((ch = readchar(fp)) == '+') { ans.kind = PLUSPLUS; strcpy(ans.tokentext, "++"); }
 			  else if (ch == '=') {ans.kind = PLUSEQ; strcpy(ans.tokentext, "+=");}
@@ -205,7 +205,7 @@ keyword gettoken(FILE* fp)
 			  else if (ch == '=') { ans.kind = DIVEQ; strcpy(ans.tokentext, "/=");}
 			  else { ans.kind = DIV; strcpy(ans.tokentext, "/"); ungetc(ch, fp); }
 			  break;
-	default: if (feof(fp)) ans.kind = EOF_;
+	default: if (feof(fp)) { ans.kind = EOF_; strcpy(ans.tokentext, "EOF"); }
 			 else ans.kind = ERROR_TOKEN;
 	}
 	ans.line = line;
