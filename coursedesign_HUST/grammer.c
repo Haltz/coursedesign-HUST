@@ -199,6 +199,7 @@ Child* Expression(int EndChar)
 			to->op = 0;
 			te->num = to;
 			NumPush(te, &num);
+			w = gettoken(fp);
 		}
 		else if (w.kind <= EXCLA && w.kind >= PLUS && w.kind != EndChar)
 		{
@@ -208,8 +209,12 @@ Child* Expression(int EndChar)
 			switch (precede[op->op - PLUS][w.kind - PLUS])
 			{
 			case'<':OpPush(w.kind, &op);
+				w = gettoken(fp);
 				break;
-			case'=':if (!OpPop(&op))error++;
+			case'=':
+				if (!OpPop(&op))
+					error++;
+				w = gettoken(fp);
 				break;
 			case'>':
 				t1 = NumPop(&num);
@@ -237,8 +242,6 @@ Child* Expression(int EndChar)
 		else if (w.kind == EndChar)
 			w.kind = EXCLA;
 		else error = 1;
-		if(w.kind != EXCLA)
-			w = gettoken(fp);
 	}
 	if (num->num != NULL && num->head->head == NULL && num->head->num == NULL && op->op == EXCLA && op->head->head == NULL)
 		return num->num;

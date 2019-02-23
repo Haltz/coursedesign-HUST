@@ -3,7 +3,7 @@ float b;
 char c;
 int test1(char a)
 {
-a = a+b*c;
+a = (a+b)*c;
 return 0;
 }
 float test2(char a, int b)
