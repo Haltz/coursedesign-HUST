@@ -157,9 +157,12 @@ int NumInitiate(NumStack* num)
 }
 int NumPush(NumStack* to, NumStack** pnum)
 {
-	if ((*pnum)->head == NULL && (*pnum)->num == NULL)
+	if ((*pnum) == NULL)
+	{
 		(*pnum) = to;
-	else to->head = (*pnum);
+		return 0;
+	}
+	to->head = (*pnum);
 	(*pnum) = to;
 	return 0;
 }
@@ -168,8 +171,8 @@ NumStack* NumPop(NumStack** pnum)
 	if ((*pnum) == NULL)
 		return NULL;
 	NumStack *res = *pnum;
-	res->head = NULL;
 	(*pnum) = (*pnum)->head;
+	res->head = NULL;
 	return res;
 }
 
@@ -183,8 +186,7 @@ Child* Expression(int EndChar)
 	int error = 0;
 	int flag = 0;
 	OpPush(EXCLA, &op);
-	//w = gettoken(fp);
-	while ((w.kind != EXCLA || op->op != EXCLA )&& error == 0)
+	while ((w.kind != EXCLA || op->op != EXCLA ) && error == 0)
 	{
 		//w = gettoken(fp);
 		if (w.kind == IDENT || IsConst(w))
@@ -198,7 +200,7 @@ Child* Expression(int EndChar)
 			te->num = to;
 			NumPush(te, &num);
 		}
-		else if (w.kind <= EXCLA && w.kind >= PLUS)
+		else if (w.kind <= EXCLA && w.kind >= PLUS && w.kind != EndChar)
 		{
 			NumStack* t1, *t2;
 			int t;
@@ -208,7 +210,6 @@ Child* Expression(int EndChar)
 			case'<':OpPush(w.kind, &op);
 				break;
 			case'=':if (!OpPop(&op))error++;
-				w = gettoken(fp);
 				break;
 			case'>':
 				t1 = NumPop(&num);
@@ -236,8 +237,10 @@ Child* Expression(int EndChar)
 		else if (w.kind == EndChar)
 			w.kind = EXCLA;
 		else error = 1;
+		if(w.kind != EXCLA)
+			w = gettoken(fp);
 	}
-	if (num != NULL && num->head == NULL && op->op == 0 && op->head == NULL)
+	if (num->num != NULL && num->head->head == NULL && num->head->num == NULL && op->op == EXCLA && op->head->head == NULL)
 		return num->num;
 	else return NULL;
 }
@@ -287,7 +290,7 @@ FormFactorListNode* FormFactorList()//ÒÑ¾­¶ÁÈëÁËLP done
 	if (w.kind == RP)
 	{
 		ffl->ffl = (FormFactorListNode*)malloc(sizeof(FormFactorListNode));
-		ffl->ffl->kind = 0;
+		ffl->kind = 0;
 		ffl->ffl->ffl = NULL;
 		return ffl;
 	}
@@ -339,9 +342,10 @@ SentenceNode* Sentence()
 		w = gettoken(fp);
 		if (w.kind != LP)
 			return NULL;
-		s->e1 = Expression(RP);
-		s->s1 = Sentence();
 		w = gettoken(fp);
+		s->e1 = Expression(RP);
+		w = gettoken(fp);
+		s->s1 = Sentence();
 		if (w.kind == ELSE)
 		{
 			w = gettoken(fp);
@@ -353,6 +357,7 @@ SentenceNode* Sentence()
 	case LP:
 		s->kind = Expres;
 		s->e1 = Expression(SEMMI);
+		w = gettoken(fp);
 		break;
 	case IDENT:
 	case INT_CONST:
@@ -360,19 +365,20 @@ SentenceNode* Sentence()
 	case CHAR_CONST:
 		s->kind = Expres;
 		s->e1 = Expression(SEMMI);
-		if (s->e1 != NULL)
-		{
-			w = gettoken(fp);
-		}
-		else return NULL;
+		s->s1 = s->s2 = NULL;
+		if(s->e1 == NULL)
+			return NULL;
+		w = gettoken(fp);
 		break;
 	case RETURN:
 		s->kind = RETURN;
+		w = gettoken(fp);
 		s->e1 = Expression(SEMMI);
 		s->s1 = NULL;
 		s->s2 = NULL;
 		if (s->e1 == NULL)
 			return NULL;
+		w = gettoken(fp);
 		break;
 	default:
 		return NULL;
@@ -390,7 +396,6 @@ SentenceListNode* SentenceList() //done
 		SentenceListNode* sl = (SentenceListNode*)malloc(sizeof(SentenceListNode));
 		sl->s = s;
 		sl->sl = SentenceList();
-		w = gettoken(fp);
 		return sl;
 	}
 }
@@ -425,13 +430,6 @@ ComposeNode* Compose()
 	}
 	else c->lv = NULL;
 	c->sl = SentenceList();
-	if (w.kind != RCURLY)
-	{
-		err++;
-		printf("line: %d error: endchar should be }\n", w.line);
-		return NULL;
-	}
-	w = gettoken(fp);
 	return c;
 }
 
@@ -473,6 +471,7 @@ ExternDefNode* ExternDef() //´¦ÀíÍâ²¿¶¨ÒåÐòÁÐ£¬ÕýÈ·Ê±£¬·µ»Ø×ÓÊ÷¸ù½áµãÖ¸Õë£¬·ñÔò·
 	if (w.kind == LP)
 	{
 		edn->fd = FunDef(wcopy);
+		w = gettoken(fp);
 		edn->evd = NULL;
 	}
 	else
@@ -616,7 +615,7 @@ int putcompose(ComposeNode* c)
 	{
 		printf("  Óï¾äÐòÁÐ£º\n");
 		SentenceListNode* sl = c->sl;
-		while (sl!=NULL && sl->s != NULL)
+		while (sl != NULL && sl->s != NULL)
 		{
 			putsen(sl->s, 3);
 			sl = sl->sl;

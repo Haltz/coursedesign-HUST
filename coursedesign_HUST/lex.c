@@ -149,7 +149,17 @@ keyword gettoken(FILE* fp)
 	case '#': ans.kind = HASHTAG; strcpy(ans.tokentext, "#"); break;
 	case '%': ans.kind = PERCENT; strcpy(ans.tokentext, "%"); break;
 	case '\\': ans.kind = NEGADIV; strcpy(ans.tokentext, "\\"); break;
-	case '\'': ans.kind = SINGLE; strcpy(ans.tokentext, "'"); break;
+	case '\'':
+		ch = fgetc(fp);
+		if (ch == '\\')
+			ch = fgetc(fp);
+		ans.tokentext[0] = ch;
+		ans.tokentext[1] = '\0';
+		ch = fgetc(fp);
+		if (ch != '\'')
+			ans.kind = ERROR_TOKEN;
+		else ans.kind = CHAR_CONST;
+		break;
 	case '\"': ans.kind = SINGGLESINGLE; strcpy(ans.tokentext, "\""); break;
 	case ',': ans.kind = COMMA; strcpy(ans.tokentext, ","); break;
 	case ';': ans.kind = SEMMI; strcpy(ans.tokentext, ";"); break;

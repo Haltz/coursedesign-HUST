@@ -3,19 +3,14 @@ float b;
 char c;
 int test1(char a)
 {
-a = 0;
+a = a+b*c;
 return 0;
 }
 float test2(char a, int b)
 {
 b = 1.0;
 c = '#';
-return b;
-}
-char test3()
-{
-c = '#';
-return c;
+return b+c;
 }
 int main()
 {
