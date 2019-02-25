@@ -30,6 +30,10 @@ char type[100][20] =
 	"IF",
 	"ELSE",
 	"RETURN",
+	"WHILE",
+	"FOR",
+	"CONTINUE",
+	"BREAK",
 	"INT_CONST",
 	"FLOAT_CONST",
 	"CHAR_CONST",
@@ -82,7 +86,6 @@ char type[100][20] =
 	"RMOVEEQ",
 	"Expres"
 };
-
 typedef struct OpStack
 {
 	struct OpStack* head;
@@ -94,6 +97,8 @@ typedef struct NumStack
 	struct NumStack* head;
 	struct Child* num;
 } NumStack;
+
+ComposeNode* Compose();
 
 int IsVarDeclare(keyword t) //是否是声明变量的关键字
 {
@@ -177,8 +182,9 @@ NumStack* NumPop(NumStack** pnum)
 }
 
 //表达式结束符号endsym可以是分号，如表达式语句，可以是反小括号，作为条件时使用
-Child* Expression(int EndChar)
+Child* Expression(int EndChar, int tot) // if it's function use, tot = 1, else tot = 0
 {
+	int l = 0, r = 0;
 	OpStack* op = (OpStack*)malloc(sizeof(OpStack));
 	OpInitiate(op);
 	NumStack* num = (NumStack*)malloc(sizeof(NumStack));
@@ -200,6 +206,37 @@ Child* Expression(int EndChar)
 			te->num = to;
 			NumPush(te, &num);
 			w = gettoken(fp);
+			flag++;
+			if (flag == 1 && w.kind == LP)
+			{
+				w = gettoken(fp);
+				Child* f = (Child*)malloc(sizeof(Child));
+				strcpy(f->i, to->i);
+				f->op = FunUse;
+				Child* fcopy = f;
+				int count = 0;
+				do
+				{
+					if (count != 0)
+						w = gettoken(fp);
+					fcopy->l = Expression(RP, 1);
+					if (fcopy != f)
+						fcopy->op = ERROR_TOKEN;
+					if(fcopy->l != NULL)
+						fcopy->r = (Child*)malloc(sizeof(Child));
+					else
+					{
+						fcopy->i[0] = '\0';
+						fcopy->r = NULL;
+						fcopy->op = ERROR_TOKEN;
+						break;
+					}
+					fcopy = fcopy->r;
+					count++;
+				} while (w.kind == RP);
+				//w = gettoken(fp);
+				return f;
+			}
 		}
 		else if (w.kind <= EXCLA && w.kind >= PLUS && w.kind != EndChar)
 		{
@@ -227,8 +264,8 @@ Child* Expression(int EndChar)
 				if (t == 0)
 					error++;
 				p->op = t;
-				p->l = t1->num;
-				p->r = t2->num;
+				p->r = t1->num;
+				p->l = t2->num;
 				p->i[0] = '\0';
 				t1->num = p;
 				NumPush(t1, &num);
@@ -239,13 +276,20 @@ Child* Expression(int EndChar)
 				else error = 1;
 			}
 		}
-		else if (w.kind == EndChar)
+		else if (w.kind == EndChar || (w.kind == COMMA && tot == 1))
 			w.kind = EXCLA;
 		else error = 1;
 	}
 	if (num->num != NULL && num->head->head == NULL && num->head->num == NULL && op->op == EXCLA && op->head->head == NULL)
+	{
+		w.kind = EndChar;
 		return num->num;
-	else return NULL;
+	}
+	else
+	{
+		w.kind = EndChar;
+		return NULL;
+	}
 }
 
 VarListNode* VarList()//已经读入了第一个变量 done
@@ -258,10 +302,10 @@ VarListNode* VarList()//已经读入了第一个变量 done
 	VarListNode* vl = (VarListNode*)malloc(sizeof(VarListNode));
 	strcpy(vl->ident, w.tokentext);
 	w = gettoken(fp);
-	if (w.kind != COMMA && w.kind != SEMMI)
+	if (w.kind != COMMA && w.kind != SEMMI && w.kind != RP)
 	{
 		err++;
-		printf("line: %d error: lack of comma or semmi\n",w.line);
+		printf("line: %d error: lack of comma or semmi or RP\n",w.line);
 		return NULL;
 	}
 	if (w.kind == SEMMI)
@@ -292,10 +336,8 @@ FormFactorListNode* FormFactorList()//已经读入了LP done
 	FormFactorListNode* ffl = (FormFactorListNode*)malloc(sizeof(FormFactorListNode));
 	if (w.kind == RP)
 	{
-		ffl->ffl = (FormFactorListNode*)malloc(sizeof(FormFactorListNode));
-		ffl->kind = 0;
-		ffl->ffl->ffl = NULL;
-		return ffl;
+		free(ffl);
+		return NULL;
 	}
 	else
 	{
@@ -346,20 +388,40 @@ SentenceNode* Sentence()
 		if (w.kind != LP)
 			return NULL;
 		w = gettoken(fp);
-		s->e1 = Expression(RP);
+		s->e1 = Expression(RP, 0);
 		w = gettoken(fp);
-		s->s1 = Sentence();
+		if (w.kind != LCURLY)
+		{
+			s->s1 = Sentence();
+			s->c1 = NULL;
+		}
+		else
+		{
+			s->s1 = NULL;
+			s->c1 = Compose();
+			w = gettoken(fp);
+		}
 		if (w.kind == ELSE)
 		{
 			w = gettoken(fp);
-			s->s2 = Sentence();
+			if (w.kind == LCURLY)
+			{
+				s->c2 = Compose();
+				s->s2 = NULL;
+				w = gettoken(fp);
+			}
+			else
+			{
+				s->s2 = Sentence();
+				s->c2 = NULL;
+			}
 			s->kind = ELSE;
 		}
 		else s->kind = IF;
 		break;
 	case LP:
 		s->kind = Expres;
-		s->e1 = Expression(SEMMI);
+		s->e1 = Expression(SEMMI, 0);
 		w = gettoken(fp);
 		break;
 	case IDENT:
@@ -367,7 +429,7 @@ SentenceNode* Sentence()
 	case FLOAT_CONST:
 	case CHAR_CONST:
 		s->kind = Expres;
-		s->e1 = Expression(SEMMI);
+		s->e1 = Expression(SEMMI, 0);
 		s->s1 = s->s2 = NULL;
 		if(s->e1 == NULL)
 			return NULL;
@@ -376,11 +438,84 @@ SentenceNode* Sentence()
 	case RETURN:
 		s->kind = RETURN;
 		w = gettoken(fp);
-		s->e1 = Expression(SEMMI);
+		s->e1 = Expression(SEMMI, 0);
 		s->s1 = NULL;
 		s->s2 = NULL;
 		if (s->e1 == NULL)
 			return NULL;
+		w = gettoken(fp);
+		break;
+	case WHILE:
+		s->kind = WHILE;
+		w = gettoken(fp);
+		if (w.kind != LP)
+		{
+			printf("error line %d\n", w.line);
+			w = gettoken(fp);
+			return NULL;
+		}
+		w = gettoken(fp);
+		s->e1 = Expression(RP, 0);
+		w = gettoken(fp);
+		if (w.kind != LCURLY)
+		{
+			s->c1 = NULL;
+			s->c2 = NULL;
+			s->s2 = NULL;
+			s->s1 = Sentence();
+		}
+		else
+		{
+			s->s1 = NULL;
+			s->s2 = NULL;
+			s->c2 = NULL;
+			s->c1 = Compose();
+		}
+		w = gettoken(fp);
+		break;
+	case FOR:
+		s->kind = FOR;
+		w = gettoken(fp);
+		if (w.kind != LP)
+		{
+			printf("error line: %d\n", w.line);
+			return NULL;
+		}
+		w = gettoken(fp);
+		s->e1 = Expression(SEMMI, 0);
+		w = gettoken(fp);
+		s->e2 = Expression(SEMMI, 0);
+		w = gettoken(fp);
+		s->e3 = Expression(RP, 0);
+		w = gettoken(fp);
+		if (w.kind == LCURLY)
+		{
+			s->s1 = s->s2 = NULL;
+			s->c2 = NULL;
+			s->c1 = Compose();
+		}
+		else
+		{
+			s->s1 = Sentence();
+			s->s2 = NULL;
+			s->c1 = s->c2 = NULL;
+		}
+		w = gettoken(fp);
+		break;
+	case BREAK:
+		s->c1 = s->c2 = NULL;
+		s->s1 = s->s2 = NULL;
+		s->e1 = s->e2 = s->e3 = NULL;
+		s->kind = BREAK;
+		w = gettoken(fp);// get ;
+		w = gettoken(fp);
+		break;
+	case CONTINUE:
+		s->c1 = s->c2 = NULL;
+		s->s1 = s->s2 = NULL;
+		s->e1 = s->e2 = s->e3 = NULL;
+		s->kind = CONTINUE;
+		w = gettoken(fp);// get ;
 		w = gettoken(fp);
 		break;
 	default:
@@ -442,8 +577,6 @@ FunDefNode* FunDef(keyword copy)
 	FunDefNode* fd = (FunDefNode*)malloc(sizeof(FunDefNode));
 	strcpy(fd->name, copy.tokentext);
 	fd->ffl = FormFactorList();
-	if (fd->ffl == NULL)
-		return NULL;
 	w = gettoken(fp);
 	if (w.kind == SEMMI) fd->c = NULL;
 	else if (w.kind == LCURLY) fd->c = Compose();
@@ -460,13 +593,84 @@ FunDefNode* FunDef(keyword copy)
 //该子程序处理完后，刚好处理到外部定义的最后一个符号，后续单词还没读入。
 ExternDefNode* ExternDef() //处理外部定义序列，正确时，返回子树根结点指针，否则返回NULL done
 {
+	ExternDefNode* edn = (ExternDefNode*)malloc(sizeof(ExternDefNode));
+	if (w.kind == EXCLA)
+	{
+		edn->di = (Def_includeNode*)malloc(sizeof(Def_includeNode));
+		Def_includeNode* a = edn->di;
+		edn->evd = NULL;
+		edn->fd = NULL;
+		edn->kind = ERROR_TOKEN;
+		w = gettoken(fp);
+		if (w.kind == INCLUDE)
+		{
+			a->kind = INCLUDE;
+			w = gettoken(fp);
+			int temp = w.kind;
+			if (w.kind != LESS && w.kind != SINGGLESINGLE)
+			{
+				printf("error line: %d\n", w.line);
+				free(a);
+				w = gettoken(fp);
+				return NULL;
+			}
+			w = gettoken(fp);
+			strcpy(a->ident, w.tokentext);
+			w = gettoken(fp);
+			if (w.kind == DOT)
+			{
+				w = gettoken(fp);
+				if (strcmp(w.tokentext, "h") != 0)
+				{
+					free(edn->di);
+					free(edn);
+					printf("error line: %d\n", w.line);
+					w = gettoken(fp);
+					return NULL;
+				}
+				w = gettoken(fp);
+			}
+			if(!((w.kind == SINGGLESINGLE && temp == SINGGLESINGLE)||(w.kind == MORE && w.kind == LESS)))
+			{
+				printf("error line: %d\n", w.line);
+				free(edn);
+				w = gettoken(fp);
+				return NULL;
+			}
+			a->val = NULL;
+			w = gettoken(fp);
+		}
+		else if (w.kind == DEFINE)
+		{
+			a->kind = DEFINE;
+			w = gettoken(fp);
+			if (w.kind != IDENT)
+			{
+				printf("error line: %d\n", w.line);
+				free(edn);
+				w = gettoken(fp);
+				return NULL;
+			}
+			strcpy(a->ident, w.tokentext);
+			w = gettoken(fp);
+			a->val = Expression(SEMMI, 0);
+			if (a->val == NULL)
+			{
+				printf("error line: %d\n", w.line);
+				free(edn);
+				w = gettoken(fp);
+				return NULL;
+			}
+			w = gettoken(fp);
+		}
+		return edn;
+	}
 	if (!IsVarDeclare(w) && w.kind != EOF_)
 	{
-		err++;
-		printf("line: %d  error: VarDeclare\n", w.line);
+		printf("error line: %d\n", w.line);
+		w = gettoken(fp);
 		return NULL;
 	}
-	ExternDefNode* edn = (ExternDefNode*)malloc(sizeof(ExternDefNode));
 	edn->kind = w.kind;
 	w = gettoken(fp);
 	keyword wcopy = w;
@@ -536,19 +740,30 @@ int putexp(Child* c, int blank)
 {
 	if (c == NULL)
 		return 0;
+	if (c->op == FunUse)
+	{
+		for (int b = 0; b < blank; b++)
+			putchar(' ');
+		printf("函数调用: %s\n", c->i);
+		for (int b = 0; b < blank; b++)
+			putchar(' ');
+		printf("实参:\n");
+		putexp(c->l, blank + 2);
+		putexp(c->r->l, blank + 2);
+	}
 	if (c->op <= UNEQUAL && c->op >= PLUS)
 	{
 		for (int b = 0; b < blank; b++) putchar(' ');
 		printf("%s\n", type[c->op]);
-		if(c->l!=NULL)
-			putexp(c->l, blank + 1);
+		if(c->l != NULL)
+			putexp(c->l, blank + 2);
 		else
 		{
 			printf("ERROR!\n");
 			return -1;
 		}
 		if(c->r!=NULL) 
-			putexp(c->r, blank + 1);
+			putexp(c->r, blank + 2);
 		else
 		{
 			printf("ERROR!\n");
@@ -567,48 +782,107 @@ int putsen(SentenceNode* s, int blank)
 	switch (s->kind)
 	{
 	case IF:
-		for (int b = 0; b < blank; b++) putchar(' ');
-		printf("IF:\n");
-		putexp(s->e1, blank+1);
-		for (int b = 0; b < blank; b++) putchar(' ');
+		for (int i = 0; i < blank; i++)
+			putchar(' ');
+		printf("IF类型\n");
+		for (int i = 0; i < blank + 2; i++)
+			putchar(' ');
+		printf("IF条件表达式:\n");
+		putexp(s->e1, blank + 2);
+		for (int i = 0; i < blank + 2; i++)
+			putchar(' ');
 		printf("THEN:\n");
-		putsen(s->s1, blank+1);
+		if(s->s1 != NULL)
+		putsen(s->s1, blank + 2);
+		if (s->c1 != NULL)
+			putcompose(s->c1, blank + 2);
 		break;
 	case ELSE:
 		for (int b = 0; b < blank; b++) putchar(' ');
-		printf("IF:\n");
-		putexp(s->e1, blank + 1);
-		for (int b = 0; b < blank; b++) putchar(' ');
+		printf("IF-ELSE类型:\n");
+		for (int b = 0; b < blank + 2; b++) putchar(' ');
+		printf("IF条件表达式\n");
+		putexp(s->e1, blank + 2);
+		for (int b = 0; b < blank + 2; b++) putchar(' ');
 		printf("THEN:\n");
-		putsen(s->s1, blank + 1);
-		for (int b = 0; b < blank; b++) putchar(' ');
+		putsen(s->s1, blank + 2);
+		for (int b = 0; b < blank + 2; b++) putchar(' ');
 		printf("ELSE:\n");
-		putsen(s->s2, blank + 1);
+		putsen(s->s2, blank + 2);
 		break;
 	case RETURN:
 		for (int b = 0; b < blank; b++) putchar(' ');
-		printf("RETURN:\n");
-		putexp(s->e1, blank + 1);
+		printf("RETURN类型:\n");
+		for (int b = 0; b < blank + 2; b++) putchar(' ');
+		printf("返回表达式:\n");
+		putexp(s->e1, blank + 4);
 		break;
 	case Expres:
 		for (int b = 0; b < blank; b++) putchar(' ');
-		printf("Expression:\n");
-		putexp(s->e1, blank + 1);
+		printf("表达式:\n");
+		putexp(s->e1, blank + 2);
+		break;
+	case WHILE:
+		for (int b = 0; b < blank; b++) putchar(' ');
+		printf("WHILE循环语句:\n");
+		for (int b = 0; b < blank + 2; b++) putchar(' ');
+		printf("WHILE循环条件表达式:\n");
+		putexp(s->e1, blank + 4);
+		for (int b = 0; b < blank + 2; b++) putchar(' ');
+		printf("WHILE循环体:\n");
+		if (s->c1 != NULL)
+			putcompose(s->c1, blank + 4);
+		if (s->s1 != NULL)
+			putsen(s->s1, blank + 4);
+		break;
+	case FOR:
+		for (int b = 0; b < blank; b++) putchar(' ');
+		printf("FOR循环语句\n");
+		for (int b = 0; b < blank + 2; b++) putchar(' ');
+		printf("初始化:\n");
+		putexp(s->e1, blank + 4);
+		for (int b = 0; b < blank + 2; b++) putchar(' ');
+		printf("条件表达式:\n");
+		putexp(s->e2, blank + 4);
+		for (int b = 0; b < blank + 2; b++) putchar(' ');
+		printf("变化:\n");
+		putexp(s->e3, blank + 4);
+		for (int b = 0; b < blank + 2; b++) putchar(' ');
+		printf("FOR循环循环体:\n");
+		if (s->s1 != NULL)
+			putsen(s->s1, blank + 4);
+		if (s->c1 != NULL)
+			putcompose(s->c1, blank + 4);
+		break;
+	case BREAK:
+		for (int b = 0; b < blank; b++) putchar(' ');
+		printf("BREAK语句\n");
+		break;
+	case CONTINUE:
+		for (int b = 0; b < blank; b++) putchar(' ');
+		printf("CONTINUE语句\n");
 		break;
 	default:
 		printf("ERROR!\n");
 	}
 	return 0;
 }
-int putcompose(ComposeNode* c)
+int putcompose(ComposeNode* c, int blank)
 {
 	if (c->lv != NULL)
 	{
 		LocalVarDefNode* lvl = c->lv;
 		while (lvl->TypeStatement[0] != '\0')
 		{
-			printf("  类型说明符：%s\n", lvl->TypeStatement);
-			printf("  变量序列：");
+			for (int b = 0; b < blank; b++)
+				putchar(' ');
+			printf("局部变量定义序列");
+			for (int b = 0; b < blank; b++)
+				putchar(' ');
+			printf("类型说明符：%s\n", lvl->TypeStatement);
+			for (int b = 0; b < blank; b++)
+				putchar(' ');
+			printf("变量序列：");
 			putvarlist(lvl->vln);
 			putchar('\n');
 			lvl = lvl->lvd;
@@ -616,11 +890,13 @@ int putcompose(ComposeNode* c)
 	}
 	if (c->sl != NULL)
 	{
-		printf("  语句序列：\n");
+		for (int b = 0; b < blank; b++)
+			putchar(' ');
+		printf("语句序列：\n");
 		SentenceListNode* sl = c->sl;
 		while (sl != NULL && sl->s != NULL)
 		{
-			putsen(sl->s, 3);
+			putsen(sl->s, blank + 2);
 			sl = sl->sl;
 		}
 	}
@@ -631,41 +907,56 @@ int output(ExternDefListNode* root)
 	int blank = 0;
 	if (root == NULL)
 	{
-		printf("ERROR!\n");
+		printf("NO WORD!\n");
 		return 0;
 	}
-	printf("外部变量定义：\n");
 	ExternDefListNode* edl = root;
 	while(edl!=NULL)
 	{
 		if(edl->edn->evd != NULL)
 		{
 			printf("外部变量定义：\n");
-			printf(" 类型说明符：%s\n", type[edl->edn->kind]);
-			printf(" 变量序列：");
+			printf("  类型说明符：%s\n", type[edl->edn->kind]);
+			printf("  变量序列：");
 			putvarlist(edl->edn->evd);//varlist output
 			putchar('\n');
 		}
 		else if (edl->edn->fd != NULL)
 		{
 			printf("外部函数定义：\n");
-			printf(" 类型说明符：%s\n", type[edl->edn->kind]);
-			printf(" 函数名称：%s\n", edl->edn->fd->name);
-			printf(" 形参序列：\n");
-			if (edl->edn->fd->ffl->kind == 0)
-				printf("  无形参\n");
+			printf("  类型说明符：%s\n", type[edl->edn->kind]);
+			printf("  函数名称：%s\n", edl->edn->fd->name);
+			printf("  形参序列：");
+			if (edl->edn->fd->ffl == NULL)
+				printf("无形参\n");
 			else
 			{
 				FormFactorListNode* ffl = edl->edn->fd->ffl;
 				while (ffl->kind != 0)
 				{
-					printf("  形参类型：%s 形参名称：%s\n", type[ffl->kind], ffl->ident);
+					printf("\n    形参类型：%s 形参名称：%s\n", type[ffl->kind], ffl->ident);
 					ffl = ffl->ffl;
 				}
 			}
-			printf(" 语句序列：\n");
+			printf("  复合语句：\n");
 			if(edl->edn->fd->c != NULL)
-				putcompose(edl->edn->fd->c);
+				putcompose(edl->edn->fd->c, 4);
+		}
+		else if (edl->edn->di != NULL)
+		{
+			Def_includeNode* t = edl->edn->di;
+			if (t->kind == DEFINE)
+			{
+				printf("#define语句:\n");
+				printf("标识符:%s\n", t->ident);
+				printf("值:\n");
+				putexp(t->val, 2);
+			}
+			if (t->kind == INCLUDE)
+			{
+				printf("#include语句:\n");
+				printf("文件名:%s\n", t->ident);
+			}
 		}
 		edl = edl->edln;
 	}

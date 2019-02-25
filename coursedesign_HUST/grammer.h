@@ -23,9 +23,11 @@ typedef struct VarListNode
 } VarListNode;
 typedef struct SentenceNode
 {
-	struct Child* e1;
+	struct Child* e1, *e2, *e3;//e2 e3只有for循环才有用
 	struct SentenceNode* s1;
 	struct SentenceNode* s2;
+	struct ComposeNode* c1;
+	struct ComposeNode* c2;
 	int kind;
 } SentenceNode;
 typedef struct SentenceListNode
@@ -61,11 +63,18 @@ typedef struct ExternVarDefNode
 	enum token_kind kind;
 	struct VarListNode* vl;
 } ExternVarDefNode;
+typedef struct Def_includeNode
+{
+	int kind;
+	char ident[20];
+	Child* val;
+} Def_includeNode;
 typedef struct ExternDefNode
 {
 	enum token_kind kind;
 	struct VarListNode* evd;
 	struct FunDefNode* fd;
+	struct Def_includeNode* di;
 } ExternDefNode;
 typedef struct ExternDefListNode
 {

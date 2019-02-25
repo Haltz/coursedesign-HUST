@@ -31,6 +31,12 @@ enum token_kind
 	IF,
 	ELSE,
 	RETURN,
+	WHILE,
+	FOR,
+	CONTINUE,
+	BREAK,
+	DEFINE,
+	INCLUDE,
 	//常量
 	INT_CONST, 
 	FLOAT_CONST, 
@@ -48,7 +54,7 @@ enum token_kind
 	  XOREQ, LESSEQ, MOREEQ, LMOVE, RMOVE, LMOVEEQ, RMOVEEQ,
 	//^=     <=      >=    <<     >>     <<=      >>=   
 	//语句类型
-	Expres
+	Expres, FunUse
 };
 
 keyword gettoken(FILE* fp);//获取单词并返回它的类型，值

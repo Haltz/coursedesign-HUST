@@ -3,18 +3,24 @@
 char readchar(FILE* fp);//用于方便的读取字符并记录行数
 int findkey(char* st);//判断是否为关键字
 
-char key_word[100][30] =
+char key_word[][30] =
 {
 	"int",
 	"float",
 	"char",
 	"if",
 	"else",
-	"return"
+	"return",
+	"while",
+	"for",
+	"continue",
+	"break",
+	"define",
+	"include"
 };
 
 keyword ans;
-int line = 0;
+int line = 1;
 
 char readchar(FILE* fp)
 {
@@ -44,7 +50,6 @@ keyword gettoken(FILE* fp)
 	if (ch <= '9'&&ch >= '0')
 	{
 		int j = 0;
-		ans.tokentext[j++] = ch;
 		if (ch == '0')
 		{
 			ch = readchar(fp);
@@ -117,15 +122,7 @@ keyword gettoken(FILE* fp)
 		ungetc(ch, fp);
 		if ((ans.kind = findkey(ans.tokentext)) != 0)
 		{
-			switch (ans.kind)
-			{
-			case 2:strcpy(ans.tokentext, "int"); break;
-			case 3:strcpy(ans.tokentext, "float"); break;
-			case 4:strcpy(ans.tokentext, "char"); break;
-			case 5:strcpy(ans.tokentext, "if"); break;
-			case 6:strcpy(ans.tokentext, "else"); break;
-			case 7:strcpy(ans.tokentext, "return"); break;
-			}
+			strcpy(ans.tokentext, key_word[ans.kind - 2]);
 			ans.line = line;
 			return ans;
 		}//判断是否是关键字
@@ -146,7 +143,7 @@ keyword gettoken(FILE* fp)
 	case '[': ans.kind = LSQUARE; strcpy(ans.tokentext, "["); break;
 	case ']': ans.kind = RSQUARE; strcpy(ans.tokentext, "]"); break;
 	case '~': ans.kind = NEGATE; strcpy(ans.tokentext, "~"); break;
-	case '#': ans.kind = HASHTAG; strcpy(ans.tokentext, "#"); break;
+	case '#': ans.kind = EXCLA; strcpy(ans.tokentext, "#"); break;
 	case '%': ans.kind = PERCENT; strcpy(ans.tokentext, "%"); break;
 	case '\\': ans.kind = NEGADIV; strcpy(ans.tokentext, "\\"); break;
 	case '\'':
@@ -184,7 +181,7 @@ keyword gettoken(FILE* fp)
 			  else { ans.kind = MORE; strcpy(ans.tokentext, ">"); ungetc(ch, fp); }
 			  break;
 	case '!': if ((ch = readchar(fp)) == '=') { ans.kind = UNEQUAL; strcpy(ans.tokentext, "!="); }
-			  else { ans.kind = EXCLA; strcpy(ans.tokentext, "!"); ungetc(ch, fp); }
+			  else { ans.kind = HASHTAG; strcpy(ans.tokentext, "!"); ungetc(ch, fp); }
 			  break;
 	case '^': if ((ch = readchar(fp)) == '=') { ans.kind = XOREQ; strcpy(ans.tokentext, "^="); }
 			  else { ans.kind = XOR; strcpy(ans.tokentext, "^"); ungetc(ch, fp); }
