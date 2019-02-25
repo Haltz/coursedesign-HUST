@@ -27,6 +27,11 @@ enum token_kind
 	INT,
 	FLOAT,
 	CHAR,
+	VOID,
+	LONG,
+	SHORT,
+	BOOL,
+	DOUBLE,
 	//关键字
 	IF,
 	ELSE,
@@ -41,17 +46,21 @@ enum token_kind
 	INT_CONST, 
 	FLOAT_CONST, 
 	CHAR_CONST,
+	LONG_CONST,
+	SHORT_CONST,
+	BOOL_CONST,
+	DOUBLE_CONST,
 	//定界符
 	LCURLY, RCURLY, LSQUARE, RSQUARE, SINGLE, SINGGLESINGLE, COMMA, SEMMI, QUESTION,
 	//{       }       [        ]      '       "              ,      ;      ?         
 	//标点符号
-	  PLUS, MINUS, MUL, DIV, LP, RP, ASSIGN, LESS, MORE, EQUAL, UNEQUAL, EXCLA, 
+	  PLUS, MINUS, MUL, DIV,PERCENT,ANDAND,OROR, LP, RP, ASSIGN, MORE, LESS,LESSEQ,MOREEQ,  EQUAL, UNEQUAL, EXCLA,
 	//+     -     *     /    (   )   =       <     >     ==     !=       #      
-	  NEGATE,  HASHTAG, PERCENT, XOR, AND, ANDAND, ANDEQ, OR, OROR, OREQ,   MINUSMINUS,  PLUSPLUS,  COMMENT,
+	  NEGATE,  HASHTAG, XOR, AND, ANDEQ, OR, OREQ,   MINUSMINUS,  PLUSPLUS,  COMMENT,
 	//!        %        ^     &    &&      &=     |          ||    |=      --           ++         //
 	  PLUSEQ, MINUSEQ, MULEQ, DIVEQ, NEGADIV, DOT, 
 	//+=      -=       *=     /=     \        .    
-	  XOREQ, LESSEQ, MOREEQ, LMOVE, RMOVE, LMOVEEQ, RMOVEEQ,
+	  XOREQ, LMOVE, RMOVE, LMOVEEQ, RMOVEEQ,
 	//^=     <=      >=    <<     >>     <<=      >>=   
 	//语句类型
 	Expres, FunUse

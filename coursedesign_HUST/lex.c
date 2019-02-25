@@ -8,6 +8,11 @@ char key_word[][30] =
 	"int",
 	"float",
 	"char",
+	"void",
+	"long",
+	"short",
+	"bool",
+	"double",
 	"if",
 	"else",
 	"return",
@@ -93,6 +98,7 @@ keyword gettoken(FILE* fp)
 				else
 				{
 					ans.kind = INT_CONST;
+					ans.tokentext[j] = '0';
 					ungetc(ch, fp);
 				}
 			}
