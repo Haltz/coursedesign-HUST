@@ -1,30 +1,29 @@
-#include "grammer.h"
+ï»¿#include "grammer.h"
 
 keyword w;
-FILE* fp;
+FILE *fp;
 
 int err = 0;
-
 char precede[20][20] =
 {
-	//+   -   *   /   %   &&  ||  (   )   =   >   <  <=  >=   ==  !=  #
-	{'>','>','<','<','<','>','>','<','>',' ','>','>','>','>','>','>','>'},//+
-	{'>','>','<','<','<','>','>','<','>',' ','>','>','>','>','>','>','>'},//-
-	{'>','>','>','>','>','>','>','<','>',' ','>','>','>','>','>','>','>'},//*
-	{'>','>','>','>','>','>','>','<','>',' ','>','>','>','>','>','>','>'},///
-	{'>','>','>','>','>','>','>','<','>',' ','>','>','>','>','>','>','>'},//%
-	{'<','<','<','<','<','>','>','<','>',' ','<','<','<','<','<','<','>'},//&&
-	{'<','<','<','<','<','<','>','<','>',' ','<','<','<','<','<','<','>'},//||
-	{'<','<','<','<','<','<','<','<','=',' ','<','<','<','<','<','<','>'},//(
-	{'>','>','>','>','>','>','>','>','>',' ','>','>','>','>','>','>','>'},//)
-    {'<','<','<','<','<','>','>','<',' ','<','<','<','<','<','<','<','>'},//=
-    {'<','<','<','<','<','>','>','<','>',' ','>','>','>','>','>','>','>'},//>
-    {'<','<','<','<','<','>','>','<','>',' ','>','>','>','>','>','>','>'},//<
-    {'<','<','<','<','<','>','>','<','>',' ','>','>','>','>','>','>','>'},//<=
-    {'<','<','<','<','<','>','>','<','>',' ','>','>','>','>','>','>','>'},//>=
-    {'<','<','<','<','<','>','>','<','>',' ','<','<','<','<','>','>','>'},//==
-    {'<','<','<','<','<','>','>','<','>',' ','<','<','<','<','>','>','>'},//!=
-    {'<','<','<','<','<','<','<','<',' ','<','<','<','<','<','<','<','='},//#
+	//+     -    *    /    %    &&   ||   (     )   =    >    <    <=   >=   ==  !=    #
+	{ '>', '>', '<', '<', '<', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, //+
+    { '>', '>', '<', '<', '<', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, //-
+    { '>', '>', '>', '>', '>', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, //*
+    { '>', '>', '>', '>', '>', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, ///
+    { '>', '>', '>', '>', '>', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, //%
+    { '<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '<', '<', '<', '<', '<', '<', '>' }, //&&
+    { '<', '<', '<', '<', '<', '<', '>', '<', '>', ' ', '<', '<', '<', '<', '<', '<', '>' }, //||
+    { '<', '<', '<', '<', '<', '<', '<', '<', '=', ' ', '<', '<', '<', '<', '<', '<', '>' }, //(
+    { '>', '>', '>', '>', '>', '>', '>', '>', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, //)
+    { '<', '<', '<', '<', '<', '>', '>', '<', ' ', '<', '<', '<', '<', '<', '<', '<', '>' }, //=
+    { '<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, //>
+    { '<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, //<
+    { '<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, //<=
+    { '<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, //>=
+    { '<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '<', '<', '<', '<', '>', '>', '>' }, //==
+    { '<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '<', '<', '<', '<', '>', '>', '>' }, //!=
+    { '<', '<', '<', '<', '<', '<', '<', '<', ' ', '<', '<', '<', '<', '<', '<', '<', '=' }, //#
 };
 char type[100][20] =
 {
@@ -55,114 +54,170 @@ char type[100][20] =
 	"BOOL_CONST",
 	"DOUBLE_CONST",
 	"LCURLY",
-	"RCURLY", 
-	"LSQUARE", 
-	"RSQUARE", 
-	"SINGLE", 
-	"SINGGLESINGLE", 
-	"COMMA", 
-	"SEMMI", 
-	"QUESTION",       
-	"PLUS", 
-	"MINUS", 
-	"MUL", 
-	"DIV", 
+	"RCURLY",
+	"LSQUARE",
+	"RSQUARE",
+	"SINGLE",
+	"SINGGLESINGLE",
+	"COMMA",
+	"SEMMI",
+	"QUESTION",
+	"PLUS",
+	"MINUS",
+	"MUL",
+	"DIV",
 	"MOD",
 	"ANDAND",
 	"OROR",
-	"LP", 
-	"RP", 
-	"ASSIGN", 
-	"MORE", 
+	"LP",
+	"RP",
+	"ASSIGN",
+	"MORE",
 	"LESS",
 	"LESSEQ",
 	"MOREEQ",
-	"EQUAL", 
-	"UNEQUAL", 
+	"EQUAL",
+	"UNEQUAL",
 	"EXCLA",
-	"NEGATE",  
-	"HASHTAG", 
-	"PERCENT", 
-	"XOR", 
-	"AND", 
-	"ANDEQ", 
-	"OR", 
-	"OREQ",   
-	"MINUSMINUS",  
-	"PLUSPLUS",  
+	"NEGATE",
+	"HASHTAG",
+	"PERCENT",
+	"XOR",
+	"AND",
+	"ANDEQ",
+	"OR",
+	"OREQ",
+	"MINUSMINUS",
+	"PLUSPLUS",
 	"COMMENT",
-	"PLUSEQ", 
-	"MINUSEQ", 
-	"MULEQ", 
-	"DIVEQ", 
-	"NEGADIV", 
+	"PLUSEQ",
+	"MINUSEQ",
+	"MULEQ",
+	"DIVEQ",
+	"NEGADIV",
 	"DOT",
-	"XOREQ",  
-	"LMOVE", 
-	"RMOVE", 
-	"LMOVEEQ", 
+	"XOREQ",
+	"LMOVE",
+	"RMOVE",
+	"LMOVEEQ",
 	"RMOVEEQ",
-	"Expres"
-};
+	"Expres" };
+
+char *getsinglecomment()
+{
+	char *ans = (char *)malloc(sizeof(char) * 100);
+	if (w.kind == COMMENT)
+	{
+		fgets(ans, 100, fp);
+		ungetc('\n', fp);
+		w = gettoken(fp);
+		return ans;
+	}
+	if (w.kind == LCOMMENT)
+	{
+		int enter = 0, j = 0;
+		char c1 = readchar(fp);
+		if (c1 == EOF)
+		{
+			printf("error line: %d\n", w.line);
+			return NULL;
+		}
+		char c2 = readchar(fp);
+		if (c2 == EOF)
+		{
+			printf("error line: %d\n", w.line);
+			return NULL;
+		}
+		while (!(c1 == '*' && c2 == '/'))
+		{
+			ans[j++] = c1;
+			c1 = c2;
+			c2 = readchar(fp);
+			if (c2 == EOF)
+			{
+				printf("error line: %d\n", w.line);
+				return NULL;
+			}
+		}
+		ans[j] = '\0';
+		w = gettoken(fp);
+		return ans;
+	}
+	return NULL;
+}
+CommentNode *getcomment()
+{
+	CommentNode *c = (CommentNode *)malloc(sizeof(CommentNode));
+	CommentNode *tc = c;
+	char *t;
+	while ((t = getsinglecomment()) != NULL)
+	{
+		int j = 0;
+		while (t[j] != '\0')
+		{
+			tc->com[j] = t[j];
+			j++;
+		}
+		tc->com[j] = '\0';
+		tc->c = (CommentNode*)malloc(sizeof(CommentNode));
+		tc = tc->c;
+	}
+	tc->c = NULL;
+	strcpy(tc->com,"");
+	return c;
+}
+
 typedef struct OpStack
 {
-	struct OpStack* head;
+	struct OpStack *head;
 	enum token_kind op;
 } OpStack;
 
 typedef struct NumStack
 {
-	struct NumStack* head;
-	struct Child* num;
+	struct NumStack *head;
+	struct Child *num;
 } NumStack;
 
-ComposeNode* Compose();
+ComposeNode *Compose();
 
-int IsVarDeclare(keyword t) //ÊÇ·ñÊÇÉùÃ÷±äÁ¿µÄ¹Ø¼ü×Ö
+int IsVarDeclare(keyword t) //æ˜¯å¦æ˜¯å£°æ˜å˜é‡çš„å…³é”®å­—
 {
-	if (t.kind <= CHAR && t.kind >= INT)
+	if (t.kind <= DOUBLE && t.kind >= INT)
 		return 1;
-	else return 0;
+	else
+		return 0;
 }
 
 int IsIdent(keyword t)
 {
-	if (t.kind == IDENT) return 1;
-	else return 0;
+	if (t.kind == IDENT)
+		return 1;
+	else
+		return 0;
 }
 
 int IsConst(keyword t)
 {
-	if (t.kind >= INT_CONST && t.kind <= CHAR_CONST)
+	if (t.kind >= INT_CONST && t.kind <= DOUBLE_CONST)
 		return 1;
 	return 0;
 }
-
-int FreeNode(VarListNode* root)
-{
-	if (root == NULL)
-		return 1;
-	VarListNode* next = root->vl;
-	if (!FreeNode(next))
-		return 0;
-	free(root);
-	return 1;
-}
-int OpInitiate(OpStack* op)
+int OpInitiate(OpStack *op)
 {
 	op->head = NULL;
 	op->op = 0;
 	return 0;
 }
-int OpPush(int to, OpStack** pnow)
+int OpPush(int to, OpStack **pnow)
 {
-	OpStack* t = (OpStack*)malloc(sizeof(OpStack));
+	OpStack *t = (OpStack *)malloc(sizeof(OpStack));
 	t->op = to;
 	t->head = (*pnow);
 	(*pnow) = t;
 	return 0;
 }
-int OpPop(OpStack** pnow)
+int OpPop(OpStack **pnow)
 {
 	if ((*pnow) == NULL)
 		return 0;
@@ -172,13 +227,13 @@ int OpPop(OpStack** pnow)
 	(*pnow) = (*pnow)->head;
 	return res;
 }
-int NumInitiate(NumStack* num)
+int NumInitiate(NumStack *num)
 {
-	(num)->num = NULL;
-	(num)->head = NULL;
+	num->head = NULL;
+	num->num = NULL;
 	return 0;
 }
-int NumPush(NumStack* to, NumStack** pnum)
+int NumPush(NumStack *to, NumStack **pnum)
 {
 	if ((*pnum) == NULL)
 	{
@@ -189,7 +244,7 @@ int NumPush(NumStack* to, NumStack** pnum)
 	(*pnum) = to;
 	return 0;
 }
-NumStack* NumPop(NumStack** pnum)
+NumStack *NumPop(NumStack **pnum)
 {
 	if ((*pnum) == NULL)
 		return NULL;
@@ -199,25 +254,26 @@ NumStack* NumPop(NumStack** pnum)
 	return res;
 }
 
-//±í´ïÊ½½áÊø·ûºÅendsym¿ÉÒÔÊÇ·ÖºÅ£¬Èç±í´ïÊ½Óï¾ä£¬¿ÉÒÔÊÇ·´Ğ¡À¨ºÅ£¬×÷ÎªÌõ¼şÊ±Ê¹ÓÃ
-Child* Expression(int EndChar, int tot) // if it's function use, tot = 1, else tot = 0
+//è¡¨è¾¾å¼ç»“æŸç¬¦å·endsymå¯ä»¥æ˜¯åˆ†å·ï¼Œå¦‚è¡¨è¾¾å¼è¯­å¥ï¼Œå¯ä»¥æ˜¯åå°æ‹¬å·ï¼Œä½œä¸ºæ¡ä»¶æ—¶ä½¿ç”¨
+Child *Expression(int EndChar, int tot) // if it's function use, tot = 1, else tot = 0
 {
-	int l = 0, r = 0;
-	OpStack* op = (OpStack*)malloc(sizeof(OpStack));
+	int cnt = 0;
+	OpStack *op = (OpStack *)malloc(sizeof(OpStack));
 	OpInitiate(op);
-	NumStack* num = (NumStack*)malloc(sizeof(NumStack));
+	NumStack *num = (NumStack *)malloc(sizeof(NumStack));
 	NumInitiate(num);
 	int error = 0;
 	int flag = 0;
 	OpPush(EXCLA, &op);
-	while ((w.kind != EXCLA || op->op != EXCLA ) && error == 0)
+	while ((w.kind != EXCLA || op->op != EXCLA) && error == 0)
 	{
 		//w = gettoken(fp);
+		cnt++;
 		if (w.kind == IDENT || IsConst(w))
 		{
-			NumStack* te = (NumStack*)malloc(sizeof(NumStack));
+			NumStack *te = (NumStack *)malloc(sizeof(NumStack));
 			te->head = NULL;
-			Child* to = (Child*)malloc(sizeof(Child));
+			Child *to = (Child *)malloc(sizeof(Child));
 			strcpy(to->i, w.tokentext);
 			to->l = to->r = NULL;
 			to->op = 0;
@@ -225,27 +281,29 @@ Child* Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 			NumPush(te, &num);
 			if (w.kind == IDENT)
 				flag = 1;
-			else flag = 0;
+			else
+				flag = 0;
 			w = gettoken(fp);
 			if (flag == 1 && w.kind == LP)
 			{
 				w = gettoken(fp);
-				Child* f = (Child*)malloc(sizeof(Child));
+				Child *f = (Child *)malloc(sizeof(Child));
 				strcpy(f->i, to->i);
 				f->op = FunUse;
-				Child* fcopy = f;
+				Child *fcopy = f;
 				int count = 0;
 				do
 				{
 					if (count != 0)
 						w = gettoken(fp);
-					if(w.kind == IDENT)
-					    fcopy->l = Expression(RP, 1);
-					else fcopy->l = NULL;
+					if (w.kind == IDENT)
+						fcopy->l = Expression(RP, 1);
+					else
+						fcopy->l = NULL;
 					if (fcopy != f)
 						fcopy->op = ERROR_TOKEN;
 					if (fcopy->l != NULL)
-						fcopy->r = (Child*)malloc(sizeof(Child));
+						fcopy->r = (Child *)malloc(sizeof(Child));
 					else
 					{
 						fcopy->i[0] = '\0';
@@ -257,7 +315,7 @@ Child* Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 					count++;
 				} while (w.kind == EXCLA);
 				//w = gettoken(fp);
-				NumStack* t1 = (NumStack*)malloc(sizeof(NumStack));
+				NumStack *t1 = (NumStack *)malloc(sizeof(NumStack));
 				t1->head = NULL;
 				t1->num = f;
 				NumPop(&num);
@@ -266,45 +324,85 @@ Child* Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 		}
 		else if (w.kind <= EXCLA && w.kind >= PLUS)
 		{
-			NumStack* t1, *t2;
+			NumStack* n = (NumStack*)malloc(sizeof(NumStack));
+			Child *t1 = NULL, *t2 = NULL;
 			int t;
-			Child* p = (Child*)malloc(sizeof(Child));
+			OpStack * xxx;
+			Child *p = (Child *)malloc(sizeof(Child));
 			switch (precede[op->op - PLUS][w.kind - PLUS])
 			{
-			case'<':OpPush(w.kind, &op);
+			case '<':
+				xxx = (OpStack*)malloc(sizeof(OpStack));
+				xxx->op = w.kind;
+				xxx->head = op;
+				op = xxx;
+				//OpPush(w.kind, &op);
+				w = gettoken(fp);
+				free(n);
+				free(p);
+				break;
+			case '=':
+				if (op->head->head == NULL)
+					error++;
+				xxx = op;
+				if (error == 0)
+					op = op->head;
+				free(xxx);
+				free(n);
+				free(p);
 				w = gettoken(fp);
 				break;
-			case'=':
-				if (!OpPop(&op))
-					error++;
-				w = gettoken(fp);
-				break;
-			case'>':
-				t1 = NumPop(&num);
-				t2 = NumPop(&num);
-				t = OpPop(&op);
-				if (t1 == NULL)
-					error++;
-				if (t2 == NULL)
-					error++;
+			case '>':
+				if (num->num != NULL)
+				{
+					t1 = num->num;
+					num = num->head;
+			    }
+				else error++;
+				if (num->num != NULL)
+				{
+					t2 = num->num;
+					num = num->head;
+				}
+				else error++;
+				xxx = op;
+				if (op->op != EXCLA)
+				{
+					t = op->op;
+					op = op->head;
+				}
+				else error++;
 				if (t == 0)
 					error++;
+				if (error == 0)
+					free(xxx);
 				p->op = t;
-				p->r = t1->num;
-				p->l = t2->num;
+				if (error == 0)p->r = t1;
+				if (error == 0)p->l = t2;
 				p->i[0] = '\0';
-				t1->num = p;
-				NumPush(t1, &num);
+				n->num = p;
+				n->head = num;
+				num = n;
 				break;
 			default:
 				if (w.kind == EndChar)
 					w.kind = EXCLA;
-				else error = 1;
+				else
+					error = 1;
 			}
 		}
 		else if (w.kind == EndChar || (w.kind == COMMA && tot == 1))
 			w.kind = EXCLA;
-		else error++;
+		else
+			error++;
+	}
+	if (cnt == 1)
+	{
+		num->num = (Child *)malloc(sizeof(Child));
+		num->num->l = num->num->r = NULL;
+		strcpy(num->num->i, "void");
+		num->num->op = 0;
+		return num->num;
 	}
 	if (num->num != NULL && num->head->head == NULL && num->head->num == NULL && op->op == EXCLA && op->head->head == NULL)
 	{
@@ -316,20 +414,23 @@ Child* Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 	}
 }
 
-VarListNode* VarList()//ÒÑ¾­¶ÁÈëÁËµÚÒ»¸ö±äÁ¿ done
+VarListNode *VarList() //å·²ç»è¯»å…¥äº†ç¬¬ä¸€ä¸ªå˜é‡ done
 {
 	if (w.kind != IDENT)
 	{
 		err++;
-		printf("line: %d error: not ident\n", w.line);
+		printf("error line: %d\n", w.line);
+		w = gettoken(fp);
+		return NULL;
 	}
-	VarListNode* vl = (VarListNode*)malloc(sizeof(VarListNode));
+	VarListNode *vl = (VarListNode *)malloc(sizeof(VarListNode));
 	strcpy(vl->ident, w.tokentext);
 	w = gettoken(fp);
 	if (w.kind != COMMA && w.kind != SEMMI && w.kind != RP)
 	{
 		err++;
-		printf("line: %d error: lack of comma or semmi or RP\n",w.line);
+		printf("line: %d error: lack of comma or semmi or RP\n", w.line);
+		w = gettoken(fp);
 		return NULL;
 	}
 	if (w.kind == SEMMI)
@@ -342,22 +443,22 @@ VarListNode* VarList()//ÒÑ¾­¶ÁÈëÁËµÚÒ»¸ö±äÁ¿ done
 	vl->vl = VarList();
 	return vl;
 }
-//µ÷ÓÃ´Ë×Ó³ÌĞòÊ±£¬Íâ²¿±äÁ¿ÀàĞÍºÍµÚÒ»¸ö±äÁ¿ÃûµÄµ¥´ÊÒÑ¾­¶ÁÈë£¬
-//±äÁ¿Ãû±£´æÔÚtokenText0ÖĞ£¬ÕâÊ±Íâ²¿±äÁ¿¶¨ÒåµÄ´¦ÀíÁ÷³Ì¿É²Î¿¼ÈçÏÂ¡£done
-ExternVarDefNode* ExternVarDef()
+//è°ƒç”¨æ­¤å­ç¨‹åºæ—¶ï¼Œå¤–éƒ¨å˜é‡ç±»å‹å’Œç¬¬ä¸€ä¸ªå˜é‡åçš„å•è¯å·²ç»è¯»å…¥ï¼Œ
+//å˜é‡åä¿å­˜åœ¨tokenText0ä¸­ï¼Œè¿™æ—¶å¤–éƒ¨å˜é‡å®šä¹‰çš„å¤„ç†æµç¨‹å¯å‚è€ƒå¦‚ä¸‹ã€‚done
+ExternVarDefNode *ExternVarDef()
 {
-	ExternVarDefNode* evd = (ExternVarDefNode*)malloc(sizeof(ExternVarDefNode));
+	ExternVarDefNode *evd = (ExternVarDefNode *)malloc(sizeof(ExternVarDefNode));
 	evd->kind = w.kind;
 	evd->vl = VarList();
 	return evd;
 }
 
-FormFactorListNode* FormFactorList()//ÒÑ¾­¶ÁÈëÁËLP done
+FormFactorListNode *FormFactorList() //å·²ç»è¯»å…¥äº†LP done
 {
 	w = gettoken(fp);
-	if (w.kind != RP && !IsVarDeclare(w)) 
+	if (w.kind != RP && !IsVarDeclare(w))
 		return NULL;
-	FormFactorListNode* ffl = (FormFactorListNode*)malloc(sizeof(FormFactorListNode));
+	FormFactorListNode *ffl = (FormFactorListNode *)malloc(sizeof(FormFactorListNode));
 	if (w.kind == RP)
 	{
 		free(ffl);
@@ -370,8 +471,9 @@ FormFactorListNode* FormFactorList()//ÒÑ¾­¶ÁÈëÁËLP done
 		if (w.kind != IDENT)
 		{
 			err++;
-			printf("line: %d error: not ident",w.line);
+			printf("line: %d error: not ident", w.line);
 			free(ffl);
+			w = gettoken(fp);
 			return NULL;
 		}
 		strcpy(ffl->ident, w.tokentext);
@@ -386,7 +488,7 @@ FormFactorListNode* FormFactorList()//ÒÑ¾­¶ÁÈëÁËLP done
 	}
 	else if (w.kind == RP)
 	{
-		ffl->ffl = (FormFactorListNode*)malloc(sizeof(FormFactorListNode));
+		ffl->ffl = (FormFactorListNode *)malloc(sizeof(FormFactorListNode));
 		ffl->ffl->kind = 0;
 		ffl->ffl->ffl = NULL;
 		return ffl;
@@ -394,27 +496,40 @@ FormFactorListNode* FormFactorList()//ÒÑ¾­¶ÁÈëÁËLP done
 	else
 	{
 		err++;
-		printf("line: %d error: wrong endchar",w.line);
+		printf("line: %d error: wrong endchar", w.line);
+		w = gettoken(fp);
 		return NULL;
 	}
 	return ffl;
 }
 
-//µ÷ÓÃ´Ë×Ó³ÌĞòÊ±£¬Óï¾äµÄµÚÒ»¸öµ¥´ÊÒÑ¾­¶ÁÈë£¬´¦ÀíÒ»ÌõÓï¾äÊ±£¬
-//¸ù¾İÕâÌõÓï¾äµÄµÚÒ»¸öµ¥´Ê£¬È·¶¨´¦ÀíÊ²Ã´ÀàĞÍµÄÓï¾ä¡£ done
-SentenceNode* Sentence()
+//è°ƒç”¨æ­¤å­ç¨‹åºæ—¶ï¼Œè¯­å¥çš„ç¬¬ä¸€ä¸ªå•è¯å·²ç»è¯»å…¥ï¼Œå¤„ç†ä¸€æ¡è¯­å¥æ—¶ï¼Œ
+//æ ¹æ®è¿™æ¡è¯­å¥çš„ç¬¬ä¸€ä¸ªå•è¯ï¼Œç¡®å®šå¤„ç†ä»€ä¹ˆç±»å‹çš„è¯­å¥ã€‚ done
+SentenceNode *Sentence()
 {
-	int for_factor = 0;
-	SentenceNode* s = (SentenceNode*)malloc(sizeof(SentenceNode));
+	SentenceNode *s = (SentenceNode *)malloc(sizeof(SentenceNode));
 	switch (w.kind)
 	{
-	case IF: //·ÖÎöÌõ¼şÓï¾ä
+	case IF: //åˆ†ææ¡ä»¶è¯­å¥
 		w = gettoken(fp);
 		if (w.kind != LP)
+		{
+			printf("error line: %d", w.line);
+			w = gettoken(fp);
+			err++;
 			return NULL;
+		}
 		w = gettoken(fp);
 		s->e1 = Expression(RP, 0);
+		if (s->e1 == NULL)
+		{
+			printf("error line: %d", w.line);
+			w = gettoken(fp);
+			err++;
+			return NULL;
+		}
 		w = gettoken(fp);
+		s->ec1 = getcomment();
 		if (w.kind != LCURLY)
 		{
 			s->s1 = Sentence();
@@ -429,6 +544,7 @@ SentenceNode* Sentence()
 		if (w.kind == ELSE)
 		{
 			w = gettoken(fp);
+			s->ec2 = getcomment(); //else+comment
 			if (w.kind == LCURLY)
 			{
 				s->c2 = Compose();
@@ -442,32 +558,53 @@ SentenceNode* Sentence()
 			}
 			s->kind = ELSE;
 		}
-		else s->kind = IF;
+		else
+			s->kind = IF;
 		break;
 	case LP:
 		s->kind = Expres;
 		s->e1 = Expression(SEMMI, 0);
+		if (s->e1 == NULL)
+		{
+			printf("error line: %d", w.line);
+			w = gettoken(fp);
+			err++;
+			return NULL;
+		}
 		w = gettoken(fp);
 		break;
 	case IDENT:
 	case INT_CONST:
 	case FLOAT_CONST:
 	case CHAR_CONST:
+	case LONG_CONST:
+	case DOUBLE_CONST:
+	case SHORT_CONST:
 		s->kind = Expres;
 		s->e1 = Expression(SEMMI, 0);
-		s->s1 = s->s2 = NULL;
-		if(s->e1 == NULL)
+		if (s->e1 == NULL)
+		{
+			printf("error line: %d", w.line);
+			w = gettoken(fp);
+			err++;
 			return NULL;
+		}
+		s->s1 = s->s2 = NULL;
 		w = gettoken(fp);
 		break;
 	case RETURN:
 		s->kind = RETURN;
 		w = gettoken(fp);
 		s->e1 = Expression(SEMMI, 0);
+		if (s->e1 == NULL)
+		{
+			printf("error line: %d", w.line);
+			w = gettoken(fp);
+			err++;
+			return NULL;
+		}
 		s->s1 = NULL;
 		s->s2 = NULL;
-		if (s->e1 == NULL)
-			return NULL;
 		w = gettoken(fp);
 		break;
 	case WHILE:
@@ -477,11 +614,21 @@ SentenceNode* Sentence()
 		{
 			printf("error line %d\n", w.line);
 			w = gettoken(fp);
+			err++;
 			return NULL;
 		}
 		w = gettoken(fp);
 		s->e1 = Expression(RP, 0);
+		if (s->e1 == NULL || (s->e1->l == NULL && s->e1->r == NULL && s->e1->op == 0))
+		{
+			printf("error line: %d", w.line);
+			w = gettoken(fp);
+			err++;
+			return NULL;
+		}
 		w = gettoken(fp);
+		s->ec1 = getcomment();
+		s->ec2 = getcomment();
 		if (w.kind != LCURLY)
 		{
 			s->c1 = NULL;
@@ -504,15 +651,40 @@ SentenceNode* Sentence()
 		if (w.kind != LP)
 		{
 			printf("error line: %d\n", w.line);
+			w = gettoken(fp);
+			err++;
 			return NULL;
 		}
 		w = gettoken(fp);
 		s->e1 = Expression(SEMMI, 0);
+		if (s->e1 == NULL)
+		{
+			printf("error line: %d\n", w.line);
+			w = gettoken(fp);
+			err++;
+			return NULL;
+		}
 		w = gettoken(fp);
 		s->e2 = Expression(SEMMI, 0);
+		if (s->e2 == NULL)
+		{
+			printf("error line: %d\n", w.line);
+			w = gettoken(fp);
+			err++;
+			return NULL;
+		}
 		w = gettoken(fp);
 		s->e3 = Expression(RP, 0);
+		if (s->e3 == NULL)
+		{
+			printf("error line: %d\n", w.line);
+			err++;
+			w = gettoken(fp);
+			return NULL;
+		}
 		w = gettoken(fp);
+		s->ec1 = getcomment();
+		s->ec2 = getcomment();
 		if (w.kind == LCURLY)
 		{
 			s->s1 = s->s2 = NULL;
@@ -533,7 +705,13 @@ SentenceNode* Sentence()
 		s->s1 = s->s2 = NULL;
 		s->e1 = s->e2 = s->e3 = NULL;
 		s->kind = BREAK;
-		w = gettoken(fp);// get ;
+		w = gettoken(fp); // get ;
+		if (w.kind != SEMMI)
+		{
+			printf("error line: %d\n", w.line);
+			w = gettoken(fp);
+			return NULL;
+		}
 		w = gettoken(fp);
 		break;
 	case CONTINUE:
@@ -541,8 +719,23 @@ SentenceNode* Sentence()
 		s->s1 = s->s2 = NULL;
 		s->e1 = s->e2 = s->e3 = NULL;
 		s->kind = CONTINUE;
-		w = gettoken(fp);// get ;
+		w = gettoken(fp); // get ;
+		if (w.kind != SEMMI)
+		{
+			printf("error line: %d\n", w.line);
+			w = gettoken(fp);
+			return NULL;
+		}
 		w = gettoken(fp);
+		break;
+	case COMMENT:
+	case LCOMMENT:
+		s->ec1 = getcomment();
+		s->ec2 = NULL;
+		s->kind = COMMENT;
+		s->c1 = s->c2 = NULL;
+		s->e1 = s->e2 = s->e3 = NULL;
+		s->s1 = s->s2 = NULL;
 		break;
 	default:
 		return NULL;
@@ -550,80 +743,98 @@ SentenceNode* Sentence()
 	return s;
 }
 
-SentenceListNode* SentenceList() //done
+SentenceListNode *SentenceList() //done
 {
-	SentenceNode* s = Sentence();
+	SentenceNode *s = Sentence();
 	if (s == NULL)
 		return NULL;
 	else
 	{
-		SentenceListNode* sl = (SentenceListNode*)malloc(sizeof(SentenceListNode));
+		SentenceListNode *sl = (SentenceListNode *)malloc(sizeof(SentenceListNode));
 		sl->s = s;
 		sl->sl = SentenceList();
 		return sl;
 	}
 }
 
-LocalVarDefNode* LocalVarDef()
+LocalVarDefNode *LocalVarDef()
 {
-	LocalVarDefNode* lvd = (LocalVarDefNode*)malloc(sizeof(LocalVarDefNode));
+	LocalVarDefNode *lvd = (LocalVarDefNode *)malloc(sizeof(LocalVarDefNode));
 	strcpy(lvd->TypeStatement, w.tokentext);
 	w = gettoken(fp);
 	if (w.kind != IDENT)
+	{
+		printf("error line: %d\n", w.line);
+		w = gettoken(fp);
+		err++;
 		return NULL;
+	}
 	lvd->vln = VarList();
 	if (IsVarDeclare(w))
 		lvd->lvd = LocalVarDef();
 	else
 	{
-		lvd->lvd = (LocalVarDefNode*)malloc(sizeof(LocalVarDefNode));
+		lvd->lvd = (LocalVarDefNode *)malloc(sizeof(LocalVarDefNode));
 		lvd->lvd->TypeStatement[0] = '\0';
-		lvd->lvd->lvd = lvd->lvd->vln = NULL;
+		lvd->lvd->lvd = NULL;
+		lvd->lvd->vln = NULL;
 	}
 	return lvd;
 }
 
-//µ÷ÓÃ´Ë×Ó³ÌĞòÊ±£¬ÒÑ¾­¶ÁÈëÁËµ¥´Ê{£¬¼ÌĞø´¦ÀíÊ±£¬Óöµ½Óöµ½}£¬½áÊø¸´ºÏÓï¾ä
-ComposeNode* Compose()
+//è°ƒç”¨æ­¤å­ç¨‹åºæ—¶ï¼Œå·²ç»è¯»å…¥äº†å•è¯{ï¼Œç»§ç»­å¤„ç†æ—¶ï¼Œé‡åˆ°é‡åˆ°}ï¼Œç»“æŸå¤åˆè¯­å¥
+ComposeNode *Compose()
 {
-	ComposeNode* c = (ComposeNode*)malloc(sizeof(ComposeNode));
+	ComposeNode *c = (ComposeNode *)malloc(sizeof(ComposeNode));
 	w = gettoken(fp);
 	if (IsVarDeclare(w))
 	{
 		c->lv = LocalVarDef();
 	}
-	else c->lv = NULL;
+	else
+		c->lv = NULL;
 	c->sl = SentenceList();
 	return c;
 }
 
-//µ÷ÓÃ´Ë×Ó³ÌĞòÊ±£¬º¯Êı·µ»ØÖµÀàĞÍºÍº¯ÊıÃû£¬ÕıĞ¡À¨ºÅµÄµ¥´ÊÒÑ¾­¶ÁÈë£¬º¯ÊıÃû±£´æÔÚtokenText0ÖĞ done
-FunDefNode* FunDef(keyword copy)
+//è°ƒç”¨æ­¤å­ç¨‹åºæ—¶ï¼Œå‡½æ•°è¿”å›å€¼ç±»å‹å’Œå‡½æ•°åï¼Œæ­£å°æ‹¬å·çš„å•è¯å·²ç»è¯»å…¥ï¼Œå‡½æ•°åä¿å­˜åœ¨tokenText0ä¸­ done
+FunDefNode *FunDef(keyword copy)
 {
-	FunDefNode* fd = (FunDefNode*)malloc(sizeof(FunDefNode));
+	FunDefNode *fd = (FunDefNode *)malloc(sizeof(FunDefNode));
 	strcpy(fd->name, copy.tokentext);
 	fd->ffl = FormFactorList();
 	w = gettoken(fp);
-	if (w.kind == SEMMI) fd->c = NULL;
-	else if (w.kind == LCURLY) fd->c = Compose();
+	fd->comment = getcomment();
+	if (w.kind == SEMMI)
+		fd->c = NULL;
+	else if (w.kind == LCURLY)
+		fd->c = Compose();
 	else
 	{
 		err++;
-		printf("line: %d error: wrong endchar\n", w.line);
+		printf("error line: %d\n", w.line);
+		w = gettoken(fp);
 		return NULL;
 	}
 	return fd;
 }
 
-//´Ë×Ó³ÌĞòÍê³ÉÒ»¸öÍâ²¿¶¨ÒåµÄ´¦Àí£¬µ÷ÓÃ´Ë×Ó³ÌĞòÊ±£¬ÒÑ¾­¶ÁÈëÁËÒ»¸öÍâ²¿¶¨ÒåµÄµÚÒ»¸öµ¥´Êµ½wÖĞ¡£
-//¸Ã×Ó³ÌĞò´¦ÀíÍêºó£¬¸ÕºÃ´¦Àíµ½Íâ²¿¶¨ÒåµÄ×îºóÒ»¸ö·ûºÅ£¬ºóĞøµ¥´Ê»¹Ã»¶ÁÈë¡£
-ExternDefNode* ExternDef() //´¦ÀíÍâ²¿¶¨ÒåĞòÁĞ£¬ÕıÈ·Ê±£¬·µ»Ø×ÓÊ÷¸ù½áµãÖ¸Õë£¬·ñÔò·µ»ØNULL done
+//æ­¤å­ç¨‹åºå®Œæˆä¸€ä¸ªå¤–éƒ¨å®šä¹‰çš„å¤„ç†ï¼Œè°ƒç”¨æ­¤å­ç¨‹åºæ—¶ï¼Œå·²ç»è¯»å…¥äº†ä¸€ä¸ªå¤–éƒ¨å®šä¹‰çš„ç¬¬ä¸€ä¸ªå•è¯åˆ°wä¸­ã€‚
+//è¯¥å­ç¨‹åºå¤„ç†å®Œåï¼Œåˆšå¥½å¤„ç†åˆ°å¤–éƒ¨å®šä¹‰çš„æœ€åä¸€ä¸ªç¬¦å·ï¼Œåç»­å•è¯è¿˜æ²¡è¯»å…¥ã€‚
+ExternDefNode *ExternDef() //å¤„ç†å¤–éƒ¨å®šä¹‰åºåˆ—ï¼Œæ­£ç¡®æ—¶ï¼Œè¿”å›å­æ ‘æ ¹ç»“ç‚¹æŒ‡é’ˆï¼Œå¦åˆ™è¿”å›NULL done
 {
-	ExternDefNode* edn = (ExternDefNode*)malloc(sizeof(ExternDefNode));
+	ExternDefNode *edn = (ExternDefNode *)malloc(sizeof(ExternDefNode));
+	if (w.kind == COMMENT || w.kind == LCOMMENT)
+	{
+		edn->comment = getcomment();
+		edn->di = edn->evd = edn->fd = NULL;
+		edn->kind = COMMENT;
+		return edn;
+	}
 	if (w.kind == EXCLA)
 	{
-		edn->di = (Def_includeNode*)malloc(sizeof(Def_includeNode));
-		Def_includeNode* a = edn->di;
+		edn->di = (Def_includeNode *)malloc(sizeof(Def_includeNode));
+		Def_includeNode *a = edn->di;
 		edn->evd = NULL;
 		edn->fd = NULL;
 		edn->kind = ERROR_TOKEN;
@@ -637,6 +848,7 @@ ExternDefNode* ExternDef() //´¦ÀíÍâ²¿¶¨ÒåĞòÁĞ£¬ÕıÈ·Ê±£¬·µ»Ø×ÓÊ÷¸ù½áµãÖ¸Õë£¬·ñÔò·
 			{
 				printf("error line: %d\n", w.line);
 				free(a);
+				err++;
 				w = gettoken(fp);
 				return NULL;
 			}
@@ -652,13 +864,15 @@ ExternDefNode* ExternDef() //´¦ÀíÍâ²¿¶¨ÒåĞòÁĞ£¬ÕıÈ·Ê±£¬·µ»Ø×ÓÊ÷¸ù½áµãÖ¸Õë£¬·ñÔò·
 					free(edn);
 					printf("error line: %d\n", w.line);
 					w = gettoken(fp);
+					err++;
 					return NULL;
 				}
 				w = gettoken(fp);
 			}
-			if(!((w.kind == SINGGLESINGLE && temp == SINGGLESINGLE)||(w.kind == MORE && w.kind == LESS)))
+			if (!((w.kind == SINGGLESINGLE && temp == SINGGLESINGLE) || (w.kind == MORE && w.kind == LESS)))
 			{
 				printf("error line: %d\n", w.line);
+				err++;
 				free(edn);
 				w = gettoken(fp);
 				return NULL;
@@ -675,6 +889,7 @@ ExternDefNode* ExternDef() //´¦ÀíÍâ²¿¶¨ÒåĞòÁĞ£¬ÕıÈ·Ê±£¬·µ»Ø×ÓÊ÷¸ù½áµãÖ¸Õë£¬·ñÔò·
 				printf("error line: %d\n", w.line);
 				free(edn);
 				w = gettoken(fp);
+				err++;
 				return NULL;
 			}
 			strcpy(a->ident, w.tokentext);
@@ -685,9 +900,18 @@ ExternDefNode* ExternDef() //´¦ÀíÍâ²¿¶¨ÒåĞòÁĞ£¬ÕıÈ·Ê±£¬·µ»Ø×ÓÊ÷¸ù½áµãÖ¸Õë£¬·ñÔò·
 				printf("error line: %d\n", w.line);
 				free(edn);
 				w = gettoken(fp);
+				err++;
 				return NULL;
 			}
 			w = gettoken(fp);
+		}
+		else
+		{
+			printf("error line: %d\n", w.line);
+			free(edn);
+			w = gettoken(fp);
+			err++;
+			return NULL;
 		}
 		return edn;
 	}
@@ -695,6 +919,7 @@ ExternDefNode* ExternDef() //´¦ÀíÍâ²¿¶¨ÒåĞòÁĞ£¬ÕıÈ·Ê±£¬·µ»Ø×ÓÊ÷¸ù½áµãÖ¸Õë£¬·ñÔò·
 	{
 		printf("error line: %d\n", w.line);
 		w = gettoken(fp);
+		err++;
 		return NULL;
 	}
 	edn->kind = w.kind;
@@ -709,7 +934,7 @@ ExternDefNode* ExternDef() //´¦ÀíÍâ²¿¶¨ÒåĞòÁĞ£¬ÕıÈ·Ê±£¬·µ»Ø×ÓÊ÷¸ù½áµãÖ¸Õë£¬·ñÔò·
 	}
 	else
 	{
-		edn->evd = (VarListNode*)malloc(sizeof(VarListNode));
+		edn->evd = (VarListNode *)malloc(sizeof(VarListNode));
 		strcpy(edn->evd->ident, wcopy.tokentext);
 		edn->evd->vl = NULL;
 		edn->fd = NULL;
@@ -720,36 +945,55 @@ ExternDefNode* ExternDef() //´¦ÀíÍâ²¿¶¨ÒåĞòÁĞ£¬ÕıÈ·Ê±£¬·µ»Ø×ÓÊ÷¸ù½áµãÖ¸Õë£¬·ñÔò·
 		}
 		else if (w.kind == SEMMI)
 			w = gettoken(fp);
-		else return NULL;
+		else
+		{
+			edn->fd = FunDef(wcopy);
+			w = gettoken(fp);
+			err++;
+			return NULL;
+		}
 	}
 	return edn;
 }
 
-//Óï·¨µ¥Î»<Íâ²¿¶¨ÒåĞòÁĞ>µÄ¶¨Òå£º
-//<Íâ²¿¶¨ÒåĞòÁĞ>£º£º = <Íâ²¿¶¨Òå> <Íâ²¿¶¨ÒåĞòÁĞ> | <Íâ²¿¶¨Òå>
-//ÕâÊÇÒ»¸öµİ¹é¶¨Òå£¬¸Ã×Ó³ÌĞò´¦ÀíÒ»ÏµÁĞµÄÍâ²¿¶¨Òå£¬Ã¿¸öÍâ²¿¶¨ÒåĞòÁĞµÄ½áµã£¬ÆäµÚÒ»¸ö×ÓÊ÷¶ÔÓ¦Ò»¸öÍâ²¿¶¨Òå£¬µÚ¶ş¿Ã×ÓÊ÷¶ÔÓ¦ºóĞøµÄÍâ²¿¶¨Òå¡£
-//ÔÚÒ»¸öÔ´³ÌĞòÖĞ£¬Ã¿´Î³É¹¦´¦ÀíÍêÒ»¸öÍâ²¿¶¨Òåºó£¬Èç¹ûÓöµ½ÎÄ¼ş½áÊø±ê¼Ç£¬ÔòÓï·¨·ÖÎö½áÊø¡£µ÷ÓÃ´Ë×Ó³ÌĞò£¬ÒÑ¾­¶ÁÈëÁËÒ»¸öÍâ²¿¶¨ÒåµÄµÚÒ»¸öµ¥´Êµ½wÖĞ¡£
-ExternDefListNode* ExternDefList()// Íâ²¿¶¨ÒåĞòÁĞ done
+//è¯­æ³•å•ä½<å¤–éƒ¨å®šä¹‰åºåˆ—>çš„å®šä¹‰ï¼š
+//<å¤–éƒ¨å®šä¹‰åºåˆ—>ï¼šï¼š = <å¤–éƒ¨å®šä¹‰> <å¤–éƒ¨å®šä¹‰åºåˆ—> | <å¤–éƒ¨å®šä¹‰>
+//è¿™æ˜¯ä¸€ä¸ªé€’å½’å®šä¹‰ï¼Œè¯¥å­ç¨‹åºå¤„ç†ä¸€ç³»åˆ—çš„å¤–éƒ¨å®šä¹‰ï¼Œæ¯ä¸ªå¤–éƒ¨å®šä¹‰åºåˆ—çš„ç»“ç‚¹ï¼Œå…¶ç¬¬ä¸€ä¸ªå­æ ‘å¯¹åº”ä¸€ä¸ªå¤–éƒ¨å®šä¹‰ï¼Œç¬¬äºŒæ£µå­æ ‘å¯¹åº”åç»­çš„å¤–éƒ¨å®šä¹‰ã€‚
+//åœ¨ä¸€ä¸ªæºç¨‹åºä¸­ï¼Œæ¯æ¬¡æˆåŠŸå¤„ç†å®Œä¸€ä¸ªå¤–éƒ¨å®šä¹‰åï¼Œå¦‚æœé‡åˆ°æ–‡ä»¶ç»“æŸæ ‡è®°ï¼Œåˆ™è¯­æ³•åˆ†æç»“æŸã€‚è°ƒç”¨æ­¤å­ç¨‹åºï¼Œå·²ç»è¯»å…¥äº†ä¸€ä¸ªå¤–éƒ¨å®šä¹‰çš„ç¬¬ä¸€ä¸ªå•è¯åˆ°wä¸­ã€‚
+ExternDefListNode *ExternDefList() // å¤–éƒ¨å®šä¹‰åºåˆ— done
 {
-	if (w.kind == EOF_) return NULL;
-	ExternDefListNode* root = (ExternDefListNode*)malloc(sizeof(ExternDefListNode));//Éú³ÉÒ»¸öÍâ²¿¶¨ÒåĞòÁĞ½áµãroot
-	root->edn = ExternDef(); //´¦ÀíÒ»¸öÍâ²¿¶¨Òå£¬µÃµ½Ò»¿Ã×ÓÊ÷£¬×÷ÎªrootµÄµÚÒ»¿Ã×ÓÊ÷
-	root->edln = ExternDefList(); //µÃµ½µÄ×ÓÊ÷£¬×÷ÎªrootµÄµÚ¶ş¿Ã×ÓÊ÷
+	if (w.kind == EOF_)
+		return NULL;
+	ExternDefListNode *root = (ExternDefListNode *)malloc(sizeof(ExternDefListNode)); //ç”Ÿæˆä¸€ä¸ªå¤–éƒ¨å®šä¹‰åºåˆ—ç»“ç‚¹root
+	root->edn = ExternDef();														  //å¤„ç†ä¸€ä¸ªå¤–éƒ¨å®šä¹‰ï¼Œå¾—åˆ°ä¸€æ£µå­æ ‘ï¼Œä½œä¸ºrootçš„ç¬¬ä¸€æ£µå­æ ‘
+	root->edln = ExternDefList();													  //å¾—åˆ°çš„å­æ ‘ï¼Œä½œä¸ºrootçš„ç¬¬äºŒæ£µå­æ ‘
 	if (root->edn == NULL)
 		return NULL;
 	return root;
 }
 
-//¶ÔÓÚÒ»¸ö³ÌĞò£¬°´ÆäÓï·¨¶¨Òå£º	<³ÌĞò> £º£º=<Íâ²¿¶¨ÒåĞòÁĞ>
-//Óï·¨µ¥Î»<³ÌĞò>µÄ×Ó³ÌĞòÈçÏÂ£¬Íê³ÉµÄ¹¦ÄÜÊÇÉú³ÉÒ»¿ÃÓï·¨Ê÷£¬¸ùÖ¸ÕëÖ¸ÏòµÄÊÇÒ»¸öÍâ²¿¶¨ÒåĞòÁĞµÄ½áµã¡£
-ExternDefListNode* GraAnalyse(FILE* fp_)
+//å¯¹äºä¸€ä¸ªç¨‹åºï¼ŒæŒ‰å…¶è¯­æ³•å®šä¹‰ï¼š	<ç¨‹åº> ï¼šï¼š=<å¤–éƒ¨å®šä¹‰åºåˆ—>
+//è¯­æ³•å•ä½<ç¨‹åº>çš„å­ç¨‹åºå¦‚ä¸‹ï¼Œå®Œæˆçš„åŠŸèƒ½æ˜¯ç”Ÿæˆä¸€æ£µè¯­æ³•æ ‘ï¼Œæ ¹æŒ‡é’ˆæŒ‡å‘çš„æ˜¯ä¸€ä¸ªå¤–éƒ¨å®šä¹‰åºåˆ—çš„ç»“ç‚¹ã€‚
+ExternDefListNode *GraAnalyse(FILE *fp_)
 {
 	fp = fp_;
 	w = gettoken(fp);
 	return ExternDefList();
 }
-
-int putvarlist(VarListNode* v)
+int putcomment(CommentNode* c, int blank)
+{
+	while(c->com != NULL && strcmp(c->com,"") != 0)
+	{
+		for (int b = 0; b < blank; b++)
+			putchar(' ');
+		printf("æ³¨é‡Š:");
+		printf("%s\n", c->com);
+		c = c->c;
+	}
+	return 0;
+}
+int putcompose(ComposeNode* c, int blank);
+int putvarlist(VarListNode *v)
 {
 	if (v == NULL)
 		return -1;
@@ -762,19 +1006,19 @@ int putvarlist(VarListNode* v)
 	}
 	return 0;
 }
-int putexp(Child* c, int blank)
+int putexp(Child *c, int blank)
 {
 	if (c == NULL)
 		return 0;
 	if (c->op == FunUse)
 	{
-		Child* cc = c;
+		Child *cc = c;
 		for (int b = 0; b < blank; b++)
 			putchar(' ');
-		printf("º¯Êıµ÷ÓÃ: %s\n", c->i);
+		printf("å‡½æ•°è°ƒç”¨: %s\n", c->i);
 		for (int b = 0; b < blank; b++)
 			putchar(' ');
-		printf("Êµ²Î:\n");
+		printf("å®å‚:\n");
 		while (cc->l != NULL)
 		{
 			putexp(cc->l, blank + 2);
@@ -783,16 +1027,17 @@ int putexp(Child* c, int blank)
 	}
 	if (c->op <= UNEQUAL && c->op >= PLUS)
 	{
-		for (int b = 0; b < blank; b++) putchar(' ');
+		for (int b = 0; b < blank; b++)
+			putchar(' ');
 		printf("%s\n", type[c->op]);
-		if(c->l != NULL)
+		if (c->l != NULL)
 			putexp(c->l, blank + 2);
 		else
 		{
 			printf("ERROR!\n");
 			return -1;
 		}
-		if(c->r!=NULL) 
+		if (c->r != NULL)
 			putexp(c->r, blank + 2);
 		else
 		{
@@ -802,123 +1047,154 @@ int putexp(Child* c, int blank)
 	}
 	if (c->op == 0)
 	{
-		for (int b = 0; b < blank; b++) putchar(' ');
-		printf("ID£º%s\n",c->i);
+		for (int b = 0; b < blank; b++)
+			putchar(' ');
+		printf("IDï¼š%s\n", c->i);
 	}
 	return 0;
 }
-int putsen(SentenceNode* s, int blank)
+int putsen(SentenceNode *s, int blank)
 {
 	switch (s->kind)
 	{
+	case COMMENT:
+		putcomment(s->ec1, blank);
+		break;
 	case IF:
 		for (int i = 0; i < blank; i++)
 			putchar(' ');
-		printf("IFÀàĞÍ\n");
+		printf("IFç±»å‹\n");
 		for (int i = 0; i < blank + 2; i++)
 			putchar(' ');
-		printf("IFÌõ¼ş±í´ïÊ½:\n");
+		printf("IFæ¡ä»¶è¡¨è¾¾å¼:\n");
 		putexp(s->e1, blank + 2);
+		if (s->ec1)
+			putcomment(s->ec1, blank+2);
 		for (int i = 0; i < blank + 2; i++)
 			putchar(' ');
 		printf("THEN:\n");
-		if(s->s1 != NULL)
-		putsen(s->s1, blank + 2);
+		if (s->s1 != NULL)
+			putsen(s->s1, blank + 2);
 		if (s->c1 != NULL)
 			putcompose(s->c1, blank + 2);
 		break;
 	case ELSE:
-		for (int b = 0; b < blank; b++) putchar(' ');
-		printf("IF-ELSEÀàĞÍ:\n");
-		for (int b = 0; b < blank + 2; b++) putchar(' ');
-		printf("IFÌõ¼ş±í´ïÊ½\n");
+		for (int b = 0; b < blank; b++)
+			putchar(' ');
+		printf("IF-ELSEç±»å‹:\n");
+		for (int b = 0; b < blank + 2; b++)
+			putchar(' ');
+		printf("IFæ¡ä»¶è¡¨è¾¾å¼\n");
 		putexp(s->e1, blank + 2);
-		for (int b = 0; b < blank + 2; b++) putchar(' ');
+		if (s->ec1)
+			putcomment(s->ec1, blank+2);
+		for (int b = 0; b < blank + 2; b++)
+			putchar(' ');
 		printf("THEN:\n");
 		if (s->s1 != NULL)
 			putsen(s->s1, blank + 2);
-		else if(s->c1 != NULL)
+		else if (s->c1 != NULL)
 			putcompose(s->c1, blank + 2);
-		for (int b = 0; b < blank + 2; b++) putchar(' ');
+		for (int b = 0; b < blank + 2; b++)
+			putchar(' ');
 		printf("ELSE:\n");
+		if (s->ec2)
+			putcomment(s->ec2, blank+2);
 		if (s->s2 != NULL)
 			putsen(s->s2, blank + 2);
 		else if (s->c2 != NULL)
 			putcompose(s->c2, blank + 2);
 		break;
 	case RETURN:
-		for (int b = 0; b < blank; b++) putchar(' ');
-		printf("RETURNÀàĞÍ:\n");
-		for (int b = 0; b < blank + 2; b++) putchar(' ');
-		printf("·µ»Ø±í´ïÊ½:\n");
+		for (int b = 0; b < blank; b++)
+			putchar(' ');
+		printf("RETURNç±»å‹:\n");
+		for (int b = 0; b < blank + 2; b++)
+			putchar(' ');
+		printf("è¿”å›è¡¨è¾¾å¼:\n");
 		putexp(s->e1, blank + 4);
 		break;
 	case Expres:
-		for (int b = 0; b < blank; b++) putchar(' ');
-		printf("±í´ïÊ½:\n");
+		for (int b = 0; b < blank; b++)
+			putchar(' ');
+		printf("è¡¨è¾¾å¼:\n");
 		putexp(s->e1, blank + 2);
 		break;
 	case WHILE:
-		for (int b = 0; b < blank; b++) putchar(' ');
-		printf("WHILEÑ­»·Óï¾ä:\n");
-		for (int b = 0; b < blank + 2; b++) putchar(' ');
-		printf("WHILEÑ­»·Ìõ¼ş±í´ïÊ½:\n");
+		for (int b = 0; b < blank; b++)
+			putchar(' ');
+		printf("WHILEå¾ªç¯è¯­å¥:\n");
+		for (int b = 0; b < blank + 2; b++)
+			putchar(' ');
+		printf("WHILEå¾ªç¯æ¡ä»¶è¡¨è¾¾å¼:\n");
 		putexp(s->e1, blank + 4);
-		for (int b = 0; b < blank + 2; b++) putchar(' ');
-		printf("WHILEÑ­»·Ìå:\n");
+		if (s->ec1)
+			putcomment(s->ec1, blank);
+		for (int b = 0; b < blank + 2; b++)
+			putchar(' ');
+		printf("WHILEå¾ªç¯ä½“:\n");
 		if (s->c1 != NULL)
 			putcompose(s->c1, blank + 4);
 		if (s->s1 != NULL)
 			putsen(s->s1, blank + 4);
 		break;
 	case FOR:
-		for (int b = 0; b < blank; b++) putchar(' ');
-		printf("FORÑ­»·Óï¾ä\n");
-		for (int b = 0; b < blank + 2; b++) putchar(' ');
-		printf("³õÊ¼»¯:\n");
+		for (int b = 0; b < blank; b++)
+			putchar(' ');
+		printf("FORå¾ªç¯è¯­å¥\n");
+		for (int b = 0; b < blank + 2; b++)
+			putchar(' ');
+		printf("åˆå§‹åŒ–:\n");
 		putexp(s->e1, blank + 4);
-		for (int b = 0; b < blank + 2; b++) putchar(' ');
-		printf("Ìõ¼ş±í´ïÊ½:\n");
+		for (int b = 0; b < blank + 2; b++)
+			putchar(' ');
+		printf("æ¡ä»¶è¡¨è¾¾å¼:\n");
 		putexp(s->e2, blank + 4);
-		for (int b = 0; b < blank + 2; b++) putchar(' ');
-		printf("±ä»¯:\n");
+		for (int b = 0; b < blank + 2; b++)
+			putchar(' ');
+		printf("å˜åŒ–:\n");
 		putexp(s->e3, blank + 4);
-		for (int b = 0; b < blank + 2; b++) putchar(' ');
-		printf("FORÑ­»·Ñ­»·Ìå:\n");
+		if (s->ec1)
+			putcomment(s->ec2, blank);
+		for (int b = 0; b < blank + 2; b++)
+			putchar(' ');
+		printf("FORå¾ªç¯å¾ªç¯ä½“:\n");
 		if (s->s1 != NULL)
 			putsen(s->s1, blank + 4);
 		if (s->c1 != NULL)
 			putcompose(s->c1, blank + 4);
 		break;
 	case BREAK:
-		for (int b = 0; b < blank; b++) putchar(' ');
-		printf("BREAKÓï¾ä\n");
+		for (int b = 0; b < blank; b++)
+			putchar(' ');
+		printf("BREAKè¯­å¥\n");
 		break;
 	case CONTINUE:
-		for (int b = 0; b < blank; b++) putchar(' ');
-		printf("CONTINUEÓï¾ä\n");
+		for (int b = 0; b < blank; b++)
+			putchar(' ');
+		printf("CONTINUEè¯­å¥\n");
 		break;
 	default:
 		printf("ERROR!\n");
 	}
 	return 0;
 }
-int putcompose(ComposeNode* c, int blank)
+int putcompose(ComposeNode *c, int blank)
 {
 	if (c->lv != NULL)
 	{
-		LocalVarDefNode* lvl = c->lv;
+		LocalVarDefNode *lvl = c->lv;
 		while (lvl->TypeStatement[0] != '\0')
 		{
 			for (int b = 0; b < blank; b++)
 				putchar(' ');
-			printf("¾Ö²¿±äÁ¿¶¨ÒåĞòÁĞ");
+			printf("å±€éƒ¨å˜é‡å®šä¹‰åºåˆ—:");
 			for (int b = 0; b < blank; b++)
 				putchar(' ');
-			printf("ÀàĞÍËµÃ÷·û£º%s\n", lvl->TypeStatement);
+			printf("ç±»å‹è¯´æ˜ç¬¦:%s\n", lvl->TypeStatement);
 			for (int b = 0; b < blank; b++)
 				putchar(' ');
-			printf("±äÁ¿ĞòÁĞ£º");
+			printf("å˜é‡åºåˆ—:");
 			putvarlist(lvl->vln);
 			putchar('\n');
 			lvl = lvl->lvd;
@@ -928,8 +1204,8 @@ int putcompose(ComposeNode* c, int blank)
 	{
 		for (int b = 0; b < blank; b++)
 			putchar(' ');
-		printf("Óï¾äĞòÁĞ£º\n");
-		SentenceListNode* sl = c->sl;
+		printf("è¯­å¥åºåˆ— \n");
+		SentenceListNode *sl = c->sl;
 		while (sl != NULL && sl->s != NULL)
 		{
 			putsen(sl->s, blank + 2);
@@ -938,61 +1214,69 @@ int putcompose(ComposeNode* c, int blank)
 	}
 	return 0;
 }
-int output(ExternDefListNode* root)
+int output(ExternDefListNode *root)
 {
+	if (err > 0)
+		return 0;
 	int blank = 0;
 	if (root == NULL)
 	{
 		printf("NO WORD!\n");
 		return 0;
 	}
-	ExternDefListNode* edl = root;
-	while(edl!=NULL)
+	ExternDefListNode *edl = root;
+	while (edl != NULL)
 	{
-		if(edl->edn->evd != NULL)
+		if (edl->edn->evd != NULL)
 		{
-			printf("Íâ²¿±äÁ¿¶¨Òå£º\n");
-			printf("  ÀàĞÍËµÃ÷·û£º%s\n", type[edl->edn->kind]);
-			printf("  ±äÁ¿ĞòÁĞ£º");
-			putvarlist(edl->edn->evd);//varlist output
+			printf("å¤–éƒ¨å˜é‡å®šä¹‰ï¼š\n");
+			printf("  ç±»å‹è¯´æ˜ç¬¦ %s\n", type[edl->edn->kind]);
+			printf("  å˜é‡åºåˆ—");
+			putvarlist(edl->edn->evd); //varlist output
 			putchar('\n');
 		}
 		else if (edl->edn->fd != NULL)
 		{
-			printf("Íâ²¿º¯Êı¶¨Òå£º\n");
-			printf("  ÀàĞÍËµÃ÷·û£º%s\n", type[edl->edn->kind]);
-			printf("  º¯ÊıÃû³Æ£º%s\n", edl->edn->fd->name);
-			printf("  ĞÎ²ÎĞòÁĞ£º");
+			printf("å¤–éƒ¨å‡½æ•°å®šä¹‰ï¼š\n");
+			printf("  ç±»å‹è¯´æ˜ç¬¦ %s\n", type[edl->edn->kind]);
+			printf("  å‡½æ•°åç§° %s\n", edl->edn->fd->name);
+			printf("  å½¢å‚åºåˆ— ");
 			if (edl->edn->fd->ffl == NULL)
-				printf("ÎŞĞÎ²Î\n");
+				printf("æ— å½¢å‚\n");
 			else
 			{
-				FormFactorListNode* ffl = edl->edn->fd->ffl;
+				FormFactorListNode *ffl = edl->edn->fd->ffl;
 				while (ffl->kind != 0)
 				{
-					printf("\n    ĞÎ²ÎÀàĞÍ£º%s ĞÎ²ÎÃû³Æ£º%s\n", type[ffl->kind], ffl->ident);
+					printf("\n    å½¢å‚ç±»å‹ %s å½¢å‚åç§° %s\n", type[ffl->kind], ffl->ident);
 					ffl = ffl->ffl;
 				}
 			}
-			printf("  ¸´ºÏÓï¾ä£º\n");
-			if(edl->edn->fd->c != NULL)
+			if (edl->edn->fd->c != NULL)
+			{
+				printf("  å¤åˆè¯­å¥ï¼š\n");
 				putcompose(edl->edn->fd->c, 4);
+			}
 		}
 		else if (edl->edn->di != NULL)
 		{
-			Def_includeNode* t = edl->edn->di;
+			Def_includeNode *t = edl->edn->di;
 			if (t->kind == DEFINE)
 			{
-				printf("#defineÓï¾ä:\n");
-				printf("±êÊ¶·û:%s\n", t->ident);
-				printf("Öµ:\n");
+				printf("#defineè¯­å¥:\n");
+				printf("æ ‡è¯†ç¬¦:%s\n", t->ident);
+				printf("å€¼:\n");
 				putexp(t->val, 2);
 			}
 			if (t->kind == INCLUDE)
 			{
-				printf("#includeÓï¾ä:\n");
-				printf("ÎÄ¼şÃû:%s\n", t->ident);
+				printf("#includeè¯­å¥:\n");
+				printf("æ–‡ä»¶å:%s\n", t->ident);
 			}
+		}
+		else if (edl->edn->comment != NULL)
+		{
+			putcomment(edl->edn->comment, 0);
 		}
 		edl = edl->edln;
 	}

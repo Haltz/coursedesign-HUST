@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef LEX_H_
 
 #define LEX_H_
@@ -43,31 +41,75 @@ enum token_kind
 	DEFINE,
 	INCLUDE,
 	//常量
-	INT_CONST, 
-	FLOAT_CONST, 
+	INT_CONST,
+	FLOAT_CONST,
 	CHAR_CONST,
 	LONG_CONST,
 	SHORT_CONST,
 	BOOL_CONST,
 	DOUBLE_CONST,
 	//定界符
-	LCURLY, RCURLY, LSQUARE, RSQUARE, SINGLE, SINGGLESINGLE, COMMA, SEMMI, QUESTION,
-	//{       }       [        ]      '       "              ,      ;      ?         
+	LCURLY,
+	RCURLY,
+	LSQUARE,
+	RSQUARE,
+	SINGLE,
+	SINGGLESINGLE,
+	COMMA,
+	SEMMI,
+	QUESTION,
+	//{       }       [        ]      '       "              ,      ;      ?
 	//标点符号
-	  PLUS, MINUS, MUL, DIV,PERCENT,ANDAND,OROR, LP, RP, ASSIGN, MORE, LESS,LESSEQ,MOREEQ,  EQUAL, UNEQUAL, EXCLA,
-	//+     -     *     /    (   )   =       <     >     ==     !=       #      
-	  NEGATE,  HASHTAG, XOR, AND, ANDEQ, OR, OREQ,   MINUSMINUS,  PLUSPLUS,  COMMENT,
+	PLUS,
+	MINUS,
+	MUL,
+	DIV,
+	MOD,
+	ANDAND,
+	OROR,
+	LP,
+	RP,
+	ASSIGN,
+	MORE,
+	LESS,
+	LESSEQ,
+	MOREEQ,
+	EQUAL,
+	UNEQUAL,
+	EXCLA,
+	//+     -     *     /    (   )   =       <     >     ==     !=       #
+	NEGATE,
+	HASHTAG,
+	PERCENT,
+	XOR,
+	AND,
+	ANDEQ,
+	OR,
+	OREQ,
+	MINUSMINUS,
+	PLUSPLUS,
+	COMMENT,
 	//!        %        ^     &    &&      &=     |          ||    |=      --           ++         //
-	  PLUSEQ, MINUSEQ, MULEQ, DIVEQ, NEGADIV, DOT, 
-	//+=      -=       *=     /=     \        .    
-	  XOREQ, LMOVE, RMOVE, LMOVEEQ, RMOVEEQ,
-	//^=     <=      >=    <<     >>     <<=      >>=   
+	PLUSEQ,
+	MINUSEQ,
+	MULEQ,
+	DIVEQ,
+	NEGADIV,
+	DOT,
+	//+=      -=       *=     /=     \        .
+	XOREQ,
+	LMOVE,
+	RMOVE,
+	LMOVEEQ,
+	RMOVEEQ,
+	//^=     <=      >=    <<     >>     <<=      >>=
+	LCOMMENT,
 	//语句类型
-	Expres, FunUse
+	Expres,
+	FunUse
 };
 
-keyword gettoken(FILE* fp);//获取单词并返回它的类型，值
-
+keyword gettoken(FILE *fp); //获取单词并返回它的类型，值
+//char* getcomment(FILE* fp);
 
 #endif // DEBUG
-
