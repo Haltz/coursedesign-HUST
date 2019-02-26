@@ -1,4 +1,0 @@
-int main()
-{
-    return q&&(a+b)||(a&&b)+(a||b&&c);
-}

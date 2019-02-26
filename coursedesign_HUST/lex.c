@@ -125,6 +125,8 @@ keyword gettoken(FILE* fp)
 		{
 			ans.tokentext[j++] = ch;
 		} while ((ch = readchar(fp)) && ((ch <= 'z'&&ch >= 'a') || (ch <= 'Z'&&ch >= 'A') || ch == '_' || (ch <= '9'&&ch >= '0')));
+		if (ch == '\n')
+			line--;
 		ungetc(ch, fp);
 		if ((ans.kind = findkey(ans.tokentext)) != 0)
 		{

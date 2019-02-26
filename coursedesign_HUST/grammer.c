@@ -7,7 +7,7 @@ int err = 0;
 
 char precede[20][20] =
 {
-	//+   -   *   /   %    &&  ||  (   )   =   >   <  <=  >=   ==  !=  #
+	//+   -   *   /   %   &&  ||  (   )   =   >   <  <=  >=   ==  !=  #
 	{'>','>','<','<','<','>','>','<','>',' ','>','>','>','>','>','>','>'},//+
 	{'>','>','<','<','<','>','>','<','>',' ','>','>','>','>','>','>','>'},//-
 	{'>','>','>','>','>','>','>','<','>',' ','>','>','>','>','>','>','>'},//*
@@ -24,7 +24,7 @@ char precede[20][20] =
     {'<','<','<','<','<','>','>','<','>',' ','>','>','>','>','>','>','>'},//>=
     {'<','<','<','<','<','>','>','<','>',' ','<','<','<','<','>','>','>'},//==
     {'<','<','<','<','<','>','>','<','>',' ','<','<','<','<','>','>','>'},//!=
-    {'<','<','<','<','<','<','<','<','<',' ','<','<','<','<','<','<','='},//#
+    {'<','<','<','<','<','<','<','<',' ','<','<','<','<','<','<','<','='},//#
 };
 char type[100][20] =
 {
@@ -223,8 +223,10 @@ Child* Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 			to->op = 0;
 			te->num = to;
 			NumPush(te, &num);
+			if (w.kind == IDENT)
+				flag = 1;
+			else flag = 0;
 			w = gettoken(fp);
-			flag++;
 			if (flag == 1 && w.kind == LP)
 			{
 				w = gettoken(fp);
@@ -237,10 +239,12 @@ Child* Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 				{
 					if (count != 0)
 						w = gettoken(fp);
-					fcopy->l = Expression(RP, 1);
+					if(w.kind == IDENT)
+					    fcopy->l = Expression(RP, 1);
+					else fcopy->l = NULL;
 					if (fcopy != f)
 						fcopy->op = ERROR_TOKEN;
-					if(fcopy->l != NULL)
+					if (fcopy->l != NULL)
 						fcopy->r = (Child*)malloc(sizeof(Child));
 					else
 					{
@@ -251,12 +255,16 @@ Child* Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 					}
 					fcopy = fcopy->r;
 					count++;
-				} while (w.kind == RP);
+				} while (w.kind == EXCLA);
 				//w = gettoken(fp);
-				return f;
+				NumStack* t1 = (NumStack*)malloc(sizeof(NumStack));
+				t1->head = NULL;
+				t1->num = f;
+				NumPop(&num);
+				NumPush(t1, &num);
 			}
 		}
-		else if (w.kind <= EXCLA && w.kind >= PLUS && w.kind != EndChar)
+		else if (w.kind <= EXCLA && w.kind >= PLUS)
 		{
 			NumStack* t1, *t2;
 			int t;
@@ -296,16 +304,14 @@ Child* Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 		}
 		else if (w.kind == EndChar || (w.kind == COMMA && tot == 1))
 			w.kind = EXCLA;
-		else error = 1;
+		else error++;
 	}
 	if (num->num != NULL && num->head->head == NULL && num->head->num == NULL && op->op == EXCLA && op->head->head == NULL)
 	{
-		w.kind = EndChar;
 		return num->num;
 	}
 	else
 	{
-		w.kind = EndChar;
 		return NULL;
 	}
 }
@@ -398,6 +404,7 @@ FormFactorListNode* FormFactorList()//已经读入了LP done
 //根据这条语句的第一个单词，确定处理什么类型的语句。 done
 SentenceNode* Sentence()
 {
+	int for_factor = 0;
 	SentenceNode* s = (SentenceNode*)malloc(sizeof(SentenceNode));
 	switch (w.kind)
 	{
@@ -488,8 +495,8 @@ SentenceNode* Sentence()
 			s->s2 = NULL;
 			s->c2 = NULL;
 			s->c1 = Compose();
+			w = gettoken(fp);
 		}
-		w = gettoken(fp);
 		break;
 	case FOR:
 		s->kind = FOR;
@@ -511,6 +518,8 @@ SentenceNode* Sentence()
 			s->s1 = s->s2 = NULL;
 			s->c2 = NULL;
 			s->c1 = Compose();
+			w = gettoken(fp);
+			//w = gettoken(fp);
 		}
 		else
 		{
@@ -518,7 +527,6 @@ SentenceNode* Sentence()
 			s->s2 = NULL;
 			s->c1 = s->c2 = NULL;
 		}
-		w = gettoken(fp);
 		break;
 	case BREAK:
 		s->c1 = s->c2 = NULL;
@@ -760,14 +768,18 @@ int putexp(Child* c, int blank)
 		return 0;
 	if (c->op == FunUse)
 	{
+		Child* cc = c;
 		for (int b = 0; b < blank; b++)
 			putchar(' ');
 		printf("函数调用: %s\n", c->i);
 		for (int b = 0; b < blank; b++)
 			putchar(' ');
 		printf("实参:\n");
-		putexp(c->l, blank + 2);
-		putexp(c->r->l, blank + 2);
+		while (cc->l != NULL)
+		{
+			putexp(cc->l, blank + 2);
+			cc = cc->r;
+		}
 	}
 	if (c->op <= UNEQUAL && c->op >= PLUS)
 	{
@@ -823,10 +835,16 @@ int putsen(SentenceNode* s, int blank)
 		putexp(s->e1, blank + 2);
 		for (int b = 0; b < blank + 2; b++) putchar(' ');
 		printf("THEN:\n");
-		putsen(s->s1, blank + 2);
+		if (s->s1 != NULL)
+			putsen(s->s1, blank + 2);
+		else if(s->c1 != NULL)
+			putcompose(s->c1, blank + 2);
 		for (int b = 0; b < blank + 2; b++) putchar(' ');
 		printf("ELSE:\n");
-		putsen(s->s2, blank + 2);
+		if (s->s2 != NULL)
+			putsen(s->s2, blank + 2);
+		else if (s->c2 != NULL)
+			putcompose(s->c2, blank + 2);
 		break;
 	case RETURN:
 		for (int b = 0; b < blank; b++) putchar(' ');
