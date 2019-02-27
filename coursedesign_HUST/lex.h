@@ -106,7 +106,9 @@ enum token_kind
 	LCOMMENT,
 	//语句类型
 	Expres,
-	FunUse
+	FunUse,
+	ARRAY,
+	FORMARRAY
 };
 
 keyword gettoken(FILE *fp); //获取单词并返回它的类型，值

@@ -4,6 +4,7 @@
 #define def 3.0;
 int a;
 int a, b, c;
+int a, j[1];
 char a;
 char a, b, c;
 float a;
@@ -16,7 +17,7 @@ short a;
 short a, b, c;
 int f1();
 int f2(char a);
-int f3(int a, float b);
+int f3(int a float b);
 int f4(int a, char b, float c);
 //test
 int f5(int c, char a, float x)
@@ -33,10 +34,12 @@ int f5(int c, char a, float x)
     long a, b, c;
     short a;
     short a, b, c;
+    double j[10];
     a = 0x123;
     a = 0123;
     a = 123;
     a = 123L;
+    a = 1.23f;
     a = 123S;
     a = 123.1;
     a = 'c';
@@ -45,7 +48,7 @@ int main()
 {
     f5(f5(c, a, x), a, x);
     //test
-    a = (((a > c) + (a >= c) - (a < c)) + (a <= c)) + (a && b);
+    a = (((a > c) + (a >= c) - (a < c)) + (a <= c)) + (a && b) != (a || b);
     if (a > c && ((a < c || a >= c) || a <= c)) //test
     {
         if (a != c && (a == c || a))
@@ -56,7 +59,7 @@ int main()
             {
                 while (a == 1) //test
                 {
-                    while (b == 1)
+                    while (b == j[1])
                         return a;
                     break;
                     continue;

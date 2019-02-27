@@ -83,7 +83,7 @@ char token_name[100][20] =
 FILE *fp;
 int main()
 {
-	int err = fopen_s(&fp, "test.c", "r");
+	int err = fopen_s(&fp, "test.txt", "r");
 	if (err != 0)
 	{
 		printf("The file can't be opened.");

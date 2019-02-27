@@ -4,6 +4,7 @@ keyword w;
 FILE *fp;
 
 int err = 0;
+int stop = 0;
 char precede[20][20] =
 {
 	//+     -    *    /    %    &&   ||   (     )   =    >    <    <=   >=   ==  !=    #
@@ -101,8 +102,21 @@ char type[100][20] =
 	"RMOVE",
 	"LMOVEEQ",
 	"RMOVEEQ",
-	"Expres" };
-
+	"LCOMMENT",
+	"Expres",
+    "FUNUSE",
+    "ARRAY"};
+int puterror(int endchar1, int endchar2)
+{
+	printf("error line: %d\n", w.line);
+	w = gettoken(fp);
+	while (w.kind != endchar1 && w.kind != endchar2 && w.kind != EOF_)
+		w = gettoken(fp);
+	if (w.kind == EOF_)
+		return 0;
+	w = gettoken(fp);
+	return 1;
+}
 char *getsinglecomment()
 {
 	char *ans = (char *)malloc(sizeof(char) * 100);
@@ -111,6 +125,7 @@ char *getsinglecomment()
 		fgets(ans, 100, fp);
 		ungetc('\n', fp);
 		w = gettoken(fp);
+		// get next word
 		return ans;
 	}
 	if (w.kind == LCOMMENT)
@@ -141,6 +156,7 @@ char *getsinglecomment()
 		}
 		ans[j] = '\0';
 		w = gettoken(fp);
+		// get next word
 		return ans;
 	}
 	return NULL;
@@ -191,7 +207,7 @@ int IsVarDeclare(keyword t) //是否是声明变量的关键字
 
 int IsIdent(keyword t)
 {
-	if (t.kind == IDENT)
+	if (t.kind == IDENT || t.kind == ARRAY)
 		return 1;
 	else
 		return 0;
@@ -269,14 +285,14 @@ Child *Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 	{
 		//w = gettoken(fp);
 		cnt++;
-		if (w.kind == IDENT || IsConst(w))
+		if (IsIdent(w) || IsConst(w))
 		{
 			NumStack *te = (NumStack *)malloc(sizeof(NumStack));
 			te->head = NULL;
 			Child *to = (Child *)malloc(sizeof(Child));
 			strcpy(to->i, w.tokentext);
 			to->l = to->r = NULL;
-			to->op = 0;
+			to->op = w.kind;
 			te->num = to;
 			NumPush(te, &num);
 			if (w.kind == IDENT)
@@ -296,7 +312,7 @@ Child *Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 				{
 					if (count != 0)
 						w = gettoken(fp);
-					if (w.kind == IDENT)
+					if (IsIdent(w))
 						fcopy->l = Expression(RP, 1);
 					else
 						fcopy->l = NULL;
@@ -414,23 +430,19 @@ Child *Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 	}
 }
 
-VarListNode *VarList() //已经读入了第一个变量 done
+VarListNode *VarList() //已经读入了第一个变量 done 会读入下一个字符 显示了错误
 {
-	if (w.kind != IDENT)
+	if ((!IsIdent(w)) && w.kind != ARRAY)
 	{
-		err++;
-		printf("error line: %d\n", w.line);
-		w = gettoken(fp);
+		puterror(SEMMI,EOF_);
 		return NULL;
 	}
 	VarListNode *vl = (VarListNode *)malloc(sizeof(VarListNode));
 	strcpy(vl->ident, w.tokentext);
 	w = gettoken(fp);
-	if (w.kind != COMMA && w.kind != SEMMI && w.kind != RP)
+	if (w.kind != COMMA && w.kind != SEMMI)
 	{
-		err++;
-		printf("line: %d error: lack of comma or semmi or RP\n", w.line);
-		w = gettoken(fp);
+		puterror(SEMMI,EOF_);
 		return NULL;
 	}
 	if (w.kind == SEMMI)
@@ -441,6 +453,8 @@ VarListNode *VarList() //已经读入了第一个变量 done
 	}
 	w = gettoken(fp);
 	vl->vl = VarList();
+	if (vl->vl == NULL)
+		return NULL;
 	return vl;
 }
 //调用此子程序时，外部变量类型和第一个变量名的单词已经读入，
@@ -450,6 +464,8 @@ ExternVarDefNode *ExternVarDef()
 	ExternVarDefNode *evd = (ExternVarDefNode *)malloc(sizeof(ExternVarDefNode));
 	evd->kind = w.kind;
 	evd->vl = VarList();
+	if (evd->vl == NULL)
+		return NULL;
 	return evd;
 }
 
@@ -457,23 +473,25 @@ FormFactorListNode *FormFactorList() //已经读入了LP done
 {
 	w = gettoken(fp);
 	if (w.kind != RP && !IsVarDeclare(w))
+	{
+		puterror(RP,EOF_);
 		return NULL;
+	}
 	FormFactorListNode *ffl = (FormFactorListNode *)malloc(sizeof(FormFactorListNode));
 	if (w.kind == RP)
 	{
-		free(ffl);
+		ffl->kind = 0;
+		ffl->ffl = NULL;
 		return NULL;
 	}
 	else
 	{
 		ffl->kind = w.kind;
 		w = gettoken(fp);
-		if (w.kind != IDENT)
+		if (!IsIdent(w) && w.kind != FORMARRAY)
 		{
-			err++;
-			printf("line: %d error: not ident", w.line);
+			puterror(RP,EOF_);
 			free(ffl);
-			w = gettoken(fp);
 			return NULL;
 		}
 		strcpy(ffl->ident, w.tokentext);
@@ -483,7 +501,10 @@ FormFactorListNode *FormFactorList() //已经读入了LP done
 	{
 		ffl->ffl = FormFactorList();
 		if (ffl->ffl == NULL)
+		{
+			puterror(RP,EOF_);
 			return NULL;
+		}
 		return ffl;
 	}
 	else if (w.kind == RP)
@@ -495,9 +516,7 @@ FormFactorListNode *FormFactorList() //已经读入了LP done
 	}
 	else
 	{
-		err++;
-		printf("line: %d error: wrong endchar", w.line);
-		w = gettoken(fp);
+		puterror(RP,EOF_);
 		return NULL;
 	}
 	return ffl;
@@ -514,18 +533,19 @@ SentenceNode *Sentence()
 		w = gettoken(fp);
 		if (w.kind != LP)
 		{
-			printf("error line: %d", w.line);
-			w = gettoken(fp);
-			err++;
+			puterror(LP,LCURLY);
+			if (w.kind == LP)
+			{
+				w = gettoken(fp);
+			}
 			return NULL;
 		}
 		w = gettoken(fp);
 		s->e1 = Expression(RP, 0);
 		if (s->e1 == NULL)
 		{
-			printf("error line: %d", w.line);
-			w = gettoken(fp);
-			err++;
+			stop = 1;
+			puterror(RP,EOF_);
 			return NULL;
 		}
 		w = gettoken(fp);
@@ -533,12 +553,21 @@ SentenceNode *Sentence()
 		if (w.kind != LCURLY)
 		{
 			s->s1 = Sentence();
+			if (s->s1 == NULL)
+			{
+				puterror(EOF_,EOF_);
+				return NULL;
+			}
 			s->c1 = NULL;
 		}
 		else
 		{
 			s->s1 = NULL;
 			s->c1 = Compose();
+			if (s->c1 == NULL)
+			{
+				puterror(RCURLY,EOF_);
+		    }
 			w = gettoken(fp);
 		}
 		if (w.kind == ELSE)
@@ -548,12 +577,21 @@ SentenceNode *Sentence()
 			if (w.kind == LCURLY)
 			{
 				s->c2 = Compose();
+				if (s->c2 == NULL)
+				{
+					puterror(RCURLY,EOF_);
+				}
 				s->s2 = NULL;
 				w = gettoken(fp);
 			}
 			else
 			{
 				s->s2 = Sentence();
+				if (s->s2 == NULL)
+				{
+					puterror(EOF_,EOF_);
+					return NULL;
+				}
 				s->c2 = NULL;
 			}
 			s->kind = ELSE;
@@ -566,14 +604,13 @@ SentenceNode *Sentence()
 		s->e1 = Expression(SEMMI, 0);
 		if (s->e1 == NULL)
 		{
-			printf("error line: %d", w.line);
-			w = gettoken(fp);
-			err++;
+			puterror(SEMMI,EOF_);
 			return NULL;
 		}
 		w = gettoken(fp);
 		break;
 	case IDENT:
+	case ARRAY:
 	case INT_CONST:
 	case FLOAT_CONST:
 	case CHAR_CONST:
@@ -584,9 +621,7 @@ SentenceNode *Sentence()
 		s->e1 = Expression(SEMMI, 0);
 		if (s->e1 == NULL)
 		{
-			printf("error line: %d", w.line);
-			w = gettoken(fp);
-			err++;
+			puterror(SEMMI, EOF_);
 			return NULL;
 		}
 		s->s1 = s->s2 = NULL;
@@ -598,9 +633,7 @@ SentenceNode *Sentence()
 		s->e1 = Expression(SEMMI, 0);
 		if (s->e1 == NULL)
 		{
-			printf("error line: %d", w.line);
-			w = gettoken(fp);
-			err++;
+			puterror(SEMMI, EOF_);
 			return NULL;
 		}
 		s->s1 = NULL;
@@ -612,18 +645,15 @@ SentenceNode *Sentence()
 		w = gettoken(fp);
 		if (w.kind != LP)
 		{
-			printf("error line %d\n", w.line);
-			w = gettoken(fp);
-			err++;
+			puterror(LCURLY,EOF_);
 			return NULL;
 		}
 		w = gettoken(fp);
 		s->e1 = Expression(RP, 0);
 		if (s->e1 == NULL || (s->e1->l == NULL && s->e1->r == NULL && s->e1->op == 0))
 		{
-			printf("error line: %d", w.line);
-			w = gettoken(fp);
-			err++;
+			stop = 1;
+			puterror(EOF_,EOF_);
 			return NULL;
 		}
 		w = gettoken(fp);
@@ -723,6 +753,7 @@ SentenceNode *Sentence()
 		if (w.kind != SEMMI)
 		{
 			printf("error line: %d\n", w.line);
+			err++;
 			w = gettoken(fp);
 			return NULL;
 		}
@@ -762,7 +793,7 @@ LocalVarDefNode *LocalVarDef()
 	LocalVarDefNode *lvd = (LocalVarDefNode *)malloc(sizeof(LocalVarDefNode));
 	strcpy(lvd->TypeStatement, w.tokentext);
 	w = gettoken(fp);
-	if (w.kind != IDENT)
+	if (!IsIdent(w))
 	{
 		printf("error line: %d\n", w.line);
 		w = gettoken(fp);
@@ -794,6 +825,13 @@ ComposeNode *Compose()
 	else
 		c->lv = NULL;
 	c->sl = SentenceList();
+	if (w.kind != RCURLY)
+	{
+		printf("error line: %d\n", w.line);
+		w = gettoken(fp);
+		err++;
+		return NULL;
+	}
 	return c;
 }
 
@@ -803,7 +841,7 @@ FunDefNode *FunDef(keyword copy)
 	FunDefNode *fd = (FunDefNode *)malloc(sizeof(FunDefNode));
 	strcpy(fd->name, copy.tokentext);
 	fd->ffl = FormFactorList();
-	w = gettoken(fp);
+	if(fd->ffl != NULL) w = gettoken(fp);
 	fd->comment = getcomment();
 	if (w.kind == SEMMI)
 		fd->c = NULL;
@@ -824,6 +862,8 @@ FunDefNode *FunDef(keyword copy)
 ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树根结点指针，否则返回NULL done
 {
 	ExternDefNode *edn = (ExternDefNode *)malloc(sizeof(ExternDefNode));
+	edn->comment = edn->di = edn->evd = edn->fd = NULL;
+	edn->kind = 0;
 	if (w.kind == COMMENT || w.kind == LCOMMENT)
 	{
 		edn->comment = getcomment();
@@ -966,9 +1006,9 @@ ExternDefListNode *ExternDefList() // 外部定义序列 done
 		return NULL;
 	ExternDefListNode *root = (ExternDefListNode *)malloc(sizeof(ExternDefListNode)); //生成一个外部定义序列结点root
 	root->edn = ExternDef();														  //处理一个外部定义，得到一棵子树，作为root的第一棵子树
+	while (root->edn == NULL && w.kind != EOF_)
+		root->edn = ExternDef();
 	root->edln = ExternDefList();													  //得到的子树，作为root的第二棵子树
-	if (root->edn == NULL)
-		return NULL;
 	return root;
 }
 
@@ -997,7 +1037,7 @@ int putvarlist(VarListNode *v)
 {
 	if (v == NULL)
 		return -1;
-	printf("%s", v->ident);
+	printf("%s ", v->ident);
 	v = v->vl;
 	while (v != NULL && v->ident[0] != '\0')
 	{
@@ -1045,11 +1085,11 @@ int putexp(Child *c, int blank)
 			return -1;
 		}
 	}
-	if (c->op == 0)
+	if (c->op == ARRAY || (c->op >= IDENT && c->op <= DOUBLE) || (c->op >= INT_CONST && c->op <= DOUBLE_CONST))
 	{
 		for (int b = 0; b < blank; b++)
 			putchar(' ');
-		printf("ID：%s\n", c->i);
+		printf("ID:%s 种类:%s\n", c->i, type[c->op]);
 	}
 	return 0;
 }
@@ -1216,8 +1256,8 @@ int putcompose(ComposeNode *c, int blank)
 }
 int output(ExternDefListNode *root)
 {
-	if (err > 0)
-		return 0;
+	//if (err > 0)
+	//	return 0;
 	int blank = 0;
 	if (root == NULL)
 	{
@@ -1240,15 +1280,13 @@ int output(ExternDefListNode *root)
 			printf("外部函数定义：\n");
 			printf("  类型说明符 %s\n", type[edl->edn->kind]);
 			printf("  函数名称 %s\n", edl->edn->fd->name);
-			printf("  形参序列 ");
-			if (edl->edn->fd->ffl == NULL)
-				printf("无形参\n");
-			else
+			printf("  形参序列\n");
+			if (edl->edn->fd->ffl != NULL)
 			{
 				FormFactorListNode *ffl = edl->edn->fd->ffl;
 				while (ffl->kind != 0)
 				{
-					printf("\n    形参类型 %s 形参名称 %s\n", type[ffl->kind], ffl->ident);
+					printf("    形参类型 %s 形参名称 %s\n", type[ffl->kind], ffl->ident);
 					ffl = ffl->ffl;
 				}
 			}

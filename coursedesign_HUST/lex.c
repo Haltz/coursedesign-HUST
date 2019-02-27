@@ -23,7 +23,6 @@ char key_word[][30] =
 		"define",
 		"include"};
 
-keyword ans;
 int line = 1;
 
 char readchar(FILE *fp)
@@ -45,6 +44,7 @@ int findkey(char *st)
 
 keyword gettoken(FILE *fp)
 {
+	keyword ans;
 	int flag = 0;
 	for (int i = 0; i < 20; i++)
 		ans.tokentext[i] = '\0';
@@ -83,7 +83,7 @@ keyword gettoken(FILE *fp)
 				}
 			}
 			//八进制
-			else
+			else 
 			{
 				//出错
 				if (ch == '0' || (ch <= '9'&&ch >= '8'))
@@ -106,7 +106,7 @@ keyword gettoken(FILE *fp)
 				else
 				{
 					ans.kind = INT_CONST;
-					ans.tokentext[j] = '0';
+					ans.tokentext[j] = '\0';
 					ungetc(ch, fp);
 				}
 			}
@@ -121,12 +121,16 @@ keyword gettoken(FILE *fp)
 				if (ch == '.') fl++;
 			} while ((ch = readchar(fp)) == '.' || (ch <= '9'&&ch >= '0'));
 			if (fl == 0) ans.kind = INT_CONST;
-			else if(fl == 1) ans.kind = FLOAT_CONST;
+			else if(fl == 1) ans.kind = DOUBLE_CONST;
 			if (ch == 'L' && ans.kind == INT_CONST)
 				ans.kind = LONG_CONST;
-			else if(ch=='S' &&  ans.kind == INT_CONST)
+			else if (ch == 'S' &&  ans.kind == INT_CONST)
 				ans.kind = SHORT_CONST;
+			else if (ch == 'f' && ans.kind == DOUBLE_CONST)
+				ans.kind = FLOAT_CONST;
 			else ungetc(ch, fp);
+			if (fl > 1)
+				ans.kind = ERROR_TOKEN;
 		}
 	}
 	//字符串
@@ -148,10 +152,39 @@ keyword gettoken(FILE *fp)
 		} //判断是否是关键字
 		else
 		{
+			char cp = readchar(fp);
+			if (cp == '[')
+			{
+				ans.tokentext[j++] = '[';
+				//cp = readchar(fp);
+				keyword wp = gettoken(fp);
+				if (wp.kind == IDENT || wp.kind == INT_CONST || wp.kind == LONG_CONST || wp.kind == SHORT_CONST || wp.kind == ARRAY)
+				{
+					for (int i = 0; i < strlen(wp.tokentext); i++)
+						ans.tokentext[j++] = wp.tokentext[i];
+					cp = readchar(fp);
+					if (cp != ']')
+					{
+						ans.kind = ERROR_TOKEN;
+						strcpy(ans.tokentext, "");
+						return ans;
+					}
+					else 
+					{
+						ans.tokentext[j++] = ']';
+						ans.tokentext[j++] = '\0';
+						ans.kind = ARRAY; 
+					}
+				}
+			}
 			//表示是一个普通的标识符
-			ans.kind = IDENT;
-			ans.line = line;
-			return ans;
+			else 
+			{
+				ungetc(cp, fp);
+				ans.kind = IDENT;
+				ans.line = line;
+				return ans;
+			}
 		}
 	}
 	else
