@@ -287,10 +287,23 @@ Child *Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 	int error = 0;
 	int flag = 0;
 	OpPush(EXCLA, &op);
+	//int tline = 0;
 	while ((w.kind != EXCLA || op->op != EXCLA) && error == 0)
 	{
 		//w = gettoken(fp);
 		cnt++;
+		/*if (cnt == 1)
+			tline = w.line;
+		if (cnt != 1 && w.line != tline)
+		{
+			int len = strlen(w.tokentext);
+			ungetc(' ', fp);
+			for (int i = len - 1; i >= 0; i--)
+			{
+				ungetc(w.tokentext[i], fp);
+			}
+			return NULL;
+		}*/
 		if (IsIdent(w) || IsConst(w))
 		{
 			NumStack *te = (NumStack *)malloc(sizeof(NumStack));
