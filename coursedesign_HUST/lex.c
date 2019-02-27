@@ -153,6 +153,8 @@ keyword gettoken(FILE *fp)
 		else
 		{
 			char cp = readchar(fp);
+			if (cp == '\n')
+				cp = readchar(fp);
 			if (cp == '[')
 			{
 				ans.tokentext[j++] = '[';

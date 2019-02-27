@@ -2,9 +2,18 @@
 
 keyword w;
 FILE *fp;
-
+char tt[100];
 int err = 0;
 int stop = 0;
+int change(fp)
+{
+	char ch = fgetc(fp);
+	while (ch != '\n')
+	{
+		ch = fgetc(fp);
+	}
+	return 0;
+}
 char precede[20][20] =
 {
 	//+     -    *    /    %    &&   ||   (     )   =    >    <    <=   >=   ==  !=    #
@@ -109,11 +118,8 @@ char type[100][20] =
 int puterror(int endchar1, int endchar2)
 {
 	printf("error line: %d\n", w.line);
-	w = gettoken(fp);
-	while (w.kind != endchar1 && w.kind != endchar2 && w.kind != EOF_)
-		w = gettoken(fp);
-	if (w.kind == EOF_)
-		return 0;
+	char* t = (char*)malloc(sizeof(char) * 100);
+	change(fp);
 	w = gettoken(fp);
 	return 1;
 }
@@ -135,6 +141,7 @@ char *getsinglecomment()
 		if (c1 == EOF)
 		{
 			printf("error line: %d\n", w.line);
+			change(fp);
 			return NULL;
 		}
 		char c2 = readchar(fp);
@@ -478,11 +485,12 @@ FormFactorListNode *FormFactorList() //已经读入了LP done
 		return NULL;
 	}
 	FormFactorListNode *ffl = (FormFactorListNode *)malloc(sizeof(FormFactorListNode));
-	if (w.kind == RP)
+	if (w.kind == RP || w.kind == VOID)
 	{
 		ffl->kind = 0;
 		ffl->ffl = NULL;
-		return NULL;
+		strcpy(ffl->ident, "VOID");
+		return ffl;
 	}
 	else
 	{
@@ -842,6 +850,7 @@ FunDefNode *FunDef(keyword copy)
 	strcpy(fd->name, copy.tokentext);
 	fd->ffl = FormFactorList();
 	if(fd->ffl != NULL) w = gettoken(fp);
+	else return NULL;
 	fd->comment = getcomment();
 	if (w.kind == SEMMI)
 		fd->c = NULL;
@@ -849,9 +858,7 @@ FunDefNode *FunDef(keyword copy)
 		fd->c = Compose();
 	else
 	{
-		err++;
 		printf("error line: %d\n", w.line);
-		w = gettoken(fp);
 		return NULL;
 	}
 	return fd;
@@ -889,6 +896,7 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 				printf("error line: %d\n", w.line);
 				free(a);
 				err++;
+				change(fp);
 				w = gettoken(fp);
 				return NULL;
 			}
@@ -903,15 +911,17 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 					free(edn->di);
 					free(edn);
 					printf("error line: %d\n", w.line);
+					change(fp);
 					w = gettoken(fp);
 					err++;
 					return NULL;
 				}
 				w = gettoken(fp);
 			}
-			if (!((w.kind == SINGGLESINGLE && temp == SINGGLESINGLE) || (w.kind == MORE && w.kind == LESS)))
+			if (!((w.kind == SINGGLESINGLE && temp == SINGGLESINGLE) || (w.kind == MORE && temp == LESS)))
 			{
 				printf("error line: %d\n", w.line);
+				change(fp);
 				err++;
 				free(edn);
 				w = gettoken(fp);
@@ -928,6 +938,7 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 			{
 				printf("error line: %d\n", w.line);
 				free(edn);
+				change(fp);
 				w = gettoken(fp);
 				err++;
 				return NULL;
@@ -939,6 +950,7 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 			{
 				printf("error line: %d\n", w.line);
 				free(edn);
+				change(fp);
 				w = gettoken(fp);
 				err++;
 				return NULL;
@@ -949,6 +961,7 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 		{
 			printf("error line: %d\n", w.line);
 			free(edn);
+			change(fp);
 			w = gettoken(fp);
 			err++;
 			return NULL;
@@ -958,9 +971,11 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 	if (!IsVarDeclare(w) && w.kind != EOF_)
 	{
 		printf("error line: %d\n", w.line);
-		w = gettoken(fp);
-		err++;
-		return NULL;
+		while (!(IsVarDeclare(w) || w.kind == EOF_ || w.kind == COMMENT || w.kind == LCOMMENT || w.kind == EXCLA))
+			w = gettoken(fp);
+		if (w.kind == EOF_)
+			return NULL;
+		else return ExternDef();
 	}
 	edn->kind = w.kind;
 	w = gettoken(fp);
@@ -969,6 +984,8 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 	if (w.kind == LP)
 	{
 		edn->fd = FunDef(wcopy);
+		if (edn->fd == NULL)
+			return NULL;
 		w = gettoken(fp);
 		edn->evd = NULL;
 	}
@@ -1007,7 +1024,9 @@ ExternDefListNode *ExternDefList() // 外部定义序列 done
 	ExternDefListNode *root = (ExternDefListNode *)malloc(sizeof(ExternDefListNode)); //生成一个外部定义序列结点root
 	root->edn = ExternDef();														  //处理一个外部定义，得到一棵子树，作为root的第一棵子树
 	while (root->edn == NULL && w.kind != EOF_)
+	{
 		root->edn = ExternDef();
+	}
 	root->edln = ExternDefList();													  //得到的子树，作为root的第二棵子树
 	return root;
 }
@@ -1267,6 +1286,8 @@ int output(ExternDefListNode *root)
 	ExternDefListNode *edl = root;
 	while (edl != NULL)
 	{
+		if (edl->edn == NULL)
+			break;
 		if (edl->edn->evd != NULL)
 		{
 			printf("外部变量定义：\n");

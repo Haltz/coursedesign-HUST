@@ -17,7 +17,7 @@ short a;
 short a, b, c;
 int f1();
 int f2(char a);
-int f3(int a float b);
+int f3(int a ,float b);
 int f4(int a, char b, float c);
 //test
 int f5(int c, char a, float x)
