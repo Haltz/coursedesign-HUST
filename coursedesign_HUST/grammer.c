@@ -15,106 +15,106 @@ int change(fp)
 	return 0;
 }
 char precede[20][20] =
-{
-	//+     -    *    /    %    &&   ||   (     )   =    >    <    <=   >=   ==  !=    #
-	{ '>', '>', '<', '<', '<', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, //+
-    { '>', '>', '<', '<', '<', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, //-
-    { '>', '>', '>', '>', '>', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, //*
-    { '>', '>', '>', '>', '>', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, ///
-    { '>', '>', '>', '>', '>', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, //%
-    { '<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '<', '<', '<', '<', '<', '<', '>' }, //&&
-    { '<', '<', '<', '<', '<', '<', '>', '<', '>', ' ', '<', '<', '<', '<', '<', '<', '>' }, //||
-    { '<', '<', '<', '<', '<', '<', '<', '<', '=', ' ', '<', '<', '<', '<', '<', '<', '>' }, //(
-    { '>', '>', '>', '>', '>', '>', '>', '>', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, //)
-    { '<', '<', '<', '<', '<', '>', '>', '<', ' ', '<', '<', '<', '<', '<', '<', '<', '>' }, //=
-    { '<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, //>
-    { '<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, //<
-    { '<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, //<=
-    { '<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>' }, //>=
-    { '<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '<', '<', '<', '<', '>', '>', '>' }, //==
-    { '<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '<', '<', '<', '<', '>', '>', '>' }, //!=
-    { '<', '<', '<', '<', '<', '<', '<', '<', ' ', '<', '<', '<', '<', '<', '<', '<', '=' }, //#
+	{
+		//+     -    *    /    %    &&   ||   (     )   =    >    <    <=   >=   ==  !=    #
+		{'>', '>', '<', '<', '<', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>'}, //+
+		{'>', '>', '<', '<', '<', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>'}, //-
+		{'>', '>', '>', '>', '>', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>'}, //*
+		{'>', '>', '>', '>', '>', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>'}, ///
+		{'>', '>', '>', '>', '>', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>'}, //%
+		{'<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '<', '<', '<', '<', '<', '<', '>'}, //&&
+		{'<', '<', '<', '<', '<', '<', '>', '<', '>', ' ', '<', '<', '<', '<', '<', '<', '>'}, //||
+		{'<', '<', '<', '<', '<', '<', '<', '<', '=', ' ', '<', '<', '<', '<', '<', '<', '>'}, //(
+		{'>', '>', '>', '>', '>', '>', '>', '>', '>', ' ', '>', '>', '>', '>', '>', '>', '>'}, //)
+		{'<', '<', '<', '<', '<', '>', '>', '<', ' ', '<', '<', '<', '<', '<', '<', '<', '>'}, //=
+		{'<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>'}, //>
+		{'<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>'}, //<
+		{'<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>'}, //<=
+		{'<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '>', '>', '>', '>', '>', '>', '>'}, //>=
+		{'<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '<', '<', '<', '<', '>', '>', '>'}, //==
+		{'<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '<', '<', '<', '<', '>', '>', '>'}, //!=
+		{'<', '<', '<', '<', '<', '<', '<', '<', ' ', '<', '<', '<', '<', '<', '<', '<', '='}, //#
 };
 char type[100][20] =
-{
-	"ERROR_TOKEN",
-	"IDENT",
-	"INT",
-	"FLOAT",
-	"CHAR",
-	"VOID",
-	"LONG",
-	"SHORT",
-	"BOOL",
-	"DOUBLE",
-	"IF",
-	"ELSE",
-	"RETURN",
-	"WHILE",
-	"FOR",
-	"CONTINUE",
-	"BREAK",
-	"DEFINE",
-	"INCLUDE",
-	"INT_CONST",
-	"FLOAT_CONST",
-	"CHAR_CONST",
-	"LONG_CONST",
-	"SHORT_CONST",
-	"BOOL_CONST",
-	"DOUBLE_CONST",
-	"LCURLY",
-	"RCURLY",
-	"LSQUARE",
-	"RSQUARE",
-	"SINGLE",
-	"SINGGLESINGLE",
-	"COMMA",
-	"SEMMI",
-	"QUESTION",
-	"PLUS",
-	"MINUS",
-	"MUL",
-	"DIV",
-	"MOD",
-	"ANDAND",
-	"OROR",
-	"LP",
-	"RP",
-	"ASSIGN",
-	"MORE",
-	"LESS",
-	"LESSEQ",
-	"MOREEQ",
-	"EQUAL",
-	"UNEQUAL",
-	"EXCLA",
-	"NEGATE",
-	"HASHTAG",
-	"PERCENT",
-	"XOR",
-	"AND",
-	"ANDEQ",
-	"OR",
-	"OREQ",
-	"MINUSMINUS",
-	"PLUSPLUS",
-	"COMMENT",
-	"PLUSEQ",
-	"MINUSEQ",
-	"MULEQ",
-	"DIVEQ",
-	"NEGADIV",
-	"DOT",
-	"XOREQ",
-	"LMOVE",
-	"RMOVE",
-	"LMOVEEQ",
-	"RMOVEEQ",
-	"LCOMMENT",
-	"Expres",
-    "FUNUSE",
-    "ARRAY"};
+	{
+		"ERROR_TOKEN",
+		"IDENT",
+		"INT",
+		"FLOAT",
+		"CHAR",
+		"VOID",
+		"LONG",
+		"SHORT",
+		"BOOL",
+		"DOUBLE",
+		"IF",
+		"ELSE",
+		"RETURN",
+		"WHILE",
+		"FOR",
+		"CONTINUE",
+		"BREAK",
+		"DEFINE",
+		"INCLUDE",
+		"INT_CONST",
+		"FLOAT_CONST",
+		"CHAR_CONST",
+		"LONG_CONST",
+		"SHORT_CONST",
+		"BOOL_CONST",
+		"DOUBLE_CONST",
+		"LCURLY",
+		"RCURLY",
+		"LSQUARE",
+		"RSQUARE",
+		"SINGLE",
+		"SINGGLESINGLE",
+		"COMMA",
+		"SEMMI",
+		"QUESTION",
+		"PLUS",
+		"MINUS",
+		"MUL",
+		"DIV",
+		"MOD",
+		"ANDAND",
+		"OROR",
+		"LP",
+		"RP",
+		"ASSIGN",
+		"MORE",
+		"LESS",
+		"LESSEQ",
+		"MOREEQ",
+		"EQUAL",
+		"UNEQUAL",
+		"EXCLA",
+		"NEGATE",
+		"HASHTAG",
+		"PERCENT",
+		"XOR",
+		"AND",
+		"ANDEQ",
+		"OR",
+		"OREQ",
+		"MINUSMINUS",
+		"PLUSPLUS",
+		"COMMENT",
+		"PLUSEQ",
+		"MINUSEQ",
+		"MULEQ",
+		"DIVEQ",
+		"NEGADIV",
+		"DOT",
+		"XOREQ",
+		"LMOVE",
+		"RMOVE",
+		"LMOVEEQ",
+		"RMOVEEQ",
+		"LCOMMENT",
+		"Expres",
+		"FUNUSE",
+		"ARRAY"};
 int puterror(int endchar1, int endchar2)
 {
 	printf("line:%d\n", w.line);
@@ -181,11 +181,11 @@ CommentNode *getcomment()
 			j++;
 		}
 		tc->com[j] = '\0';
-		tc->c = (CommentNode*)malloc(sizeof(CommentNode));
+		tc->c = (CommentNode *)malloc(sizeof(CommentNode));
 		tc = tc->c;
 	}
 	tc->c = NULL;
-	strcpy(tc->com,"");
+	strcpy(tc->com, "");
 	return c;
 }
 
@@ -346,15 +346,15 @@ Child *Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 		}
 		else if (w.kind <= EXCLA && w.kind >= PLUS)
 		{
-			NumStack* n = (NumStack*)malloc(sizeof(NumStack));
+			NumStack *n = (NumStack *)malloc(sizeof(NumStack));
 			Child *t1 = NULL, *t2 = NULL;
 			int t;
-			OpStack * xxx;
+			OpStack *xxx;
 			Child *p = (Child *)malloc(sizeof(Child));
 			switch (precede[op->op - PLUS][w.kind - PLUS])
 			{
 			case '<':
-				xxx = (OpStack*)malloc(sizeof(OpStack));
+				xxx = (OpStack *)malloc(sizeof(OpStack));
 				xxx->op = w.kind;
 				xxx->head = op;
 				op = xxx;
@@ -379,28 +379,33 @@ Child *Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 				{
 					t1 = num->num;
 					num = num->head;
-			    }
-				else error++;
+				}
+				else
+					error++;
 				if (num->num != NULL)
 				{
 					t2 = num->num;
 					num = num->head;
 				}
-				else error++;
+				else
+					error++;
 				xxx = op;
 				if (op->op != EXCLA)
 				{
 					t = op->op;
 					op = op->head;
 				}
-				else error++;
+				else
+					error++;
 				if (t == 0)
 					error++;
 				if (error == 0)
 					free(xxx);
 				p->op = t;
-				if (error == 0)p->r = t1;
-				if (error == 0)p->l = t2;
+				if (error == 0)
+					p->r = t1;
+				if (error == 0)
+					p->l = t2;
 				p->i[0] = '\0';
 				n->num = p;
 				n->head = num;
@@ -440,7 +445,7 @@ VarListNode *VarList() //已经读入了第一个变量 done 会读入下一个�
 {
 	if ((!IsIdent(w)) && w.kind != ARRAY)
 	{
-		puterror(SEMMI,EOF_);
+		puterror(SEMMI, EOF_);
 		return NULL;
 	}
 	VarListNode *vl = (VarListNode *)malloc(sizeof(VarListNode));
@@ -448,7 +453,7 @@ VarListNode *VarList() //已经读入了第一个变量 done 会读入下一个�
 	w = gettoken(fp);
 	if (w.kind != COMMA && w.kind != SEMMI)
 	{
-		puterror(SEMMI,EOF_);
+		puterror(SEMMI, EOF_);
 		return NULL;
 	}
 	if (w.kind == SEMMI)
@@ -563,16 +568,16 @@ SentenceNode *Sentence()
 			printf("line%d\n", w.line);
 			s->e1 = NULL;
 		}
-		else 
+		else
 		{
-		    w = gettoken(fp);
-		    s->e1 = Expression(RP, 0);
+			w = gettoken(fp);
+			s->e1 = Expression(RP, 0);
 			if (s->e1 == NULL)
 			{
 				change(fp);
 				printf("line%d\n", w.line);
 			}
-	    }
+		}
 		w = gettoken(fp);
 		s->ec1 = getcomment();
 		if (w.kind != LCURLY)
@@ -734,7 +739,8 @@ SentenceNode *Sentence()
 						change(fp);
 						w = gettoken(fp);
 					}
-					else w = gettoken(fp);
+					else
+						w = gettoken(fp);
 				}
 			}
 		}
@@ -857,7 +863,7 @@ ComposeNode *Compose()
 	else
 		c->lv = NULL;
 	c->sl = SentenceList();
-	if (w.kind != RCURLY) 
+	if (w.kind != RCURLY)
 	{
 		printf("%d\n", w.line);
 		change(fp);
@@ -872,8 +878,10 @@ FunDefNode *FunDef(keyword copy)
 	FunDefNode *fd = (FunDefNode *)malloc(sizeof(FunDefNode));
 	strcpy(fd->name, copy.tokentext);
 	fd->ffl = FormFactorList(1);
-	if(fd->ffl != NULL) w = gettoken(fp);
-	else return NULL;
+	if (fd->ffl != NULL)
+		w = gettoken(fp);
+	else
+		return NULL;
 	fd->comment = getcomment();
 	if (w.kind == SEMMI)
 		fd->c = NULL;
@@ -968,13 +976,15 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 			}
 			strcpy(a->ident, w.tokentext);
 			w = gettoken(fp);
+			int tline = w.line;
 			a->val = Expression(SEMMI, 0);
 			if (a->val == NULL)
 			{
-				printf("line:%d\n", w.line);
+				if (w.line != tline)
+				{
+					printf("line:%d\n", tline);
+				}
 				free(edn);
-				change(fp);
-				w = gettoken(fp);
 				err++;
 				return NULL;
 			}
@@ -998,7 +1008,8 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 		w = gettoken(fp);
 		if (w.kind == EOF_)
 			return NULL;
-		else return ExternDef();
+		else
+			return ExternDef();
 	}
 	edn->kind = w.kind;
 	w = gettoken(fp);
@@ -1057,7 +1068,7 @@ ExternDefListNode *ExternDefList() // 外部定义序列 done
 	{
 		root->edn = ExternDef();
 	}
-	root->edln = ExternDefList();													  //得到的子树，作为root的第二棵子树
+	root->edln = ExternDefList(); //得到的子树，作为root的第二棵子树
 	return root;
 }
 
@@ -1069,9 +1080,9 @@ ExternDefListNode *GraAnalyse(FILE *fp_)
 	w = gettoken(fp);
 	return ExternDefList();
 }
-int putcomment(CommentNode* c, int blank)
+int putcomment(CommentNode *c, int blank)
 {
-	while(strcmp(c->com,"") != 0)
+	while (strcmp(c->com, "") != 0)
 	{
 		for (int b = 0; b < blank; b++)
 			putchar(' ');
@@ -1081,7 +1092,7 @@ int putcomment(CommentNode* c, int blank)
 	}
 	return 0;
 }
-int putcompose(ComposeNode* c, int blank);
+int putcompose(ComposeNode *c, int blank);
 int putvarlist(VarListNode *v)
 {
 	if (v == NULL)
@@ -1164,7 +1175,7 @@ int putsen(SentenceNode *s, int blank)
 		printf("IF条件表达式:\n");
 		putexp(s->e1, blank + 2);
 		if (s->ec1)
-			putcomment(s->ec1, blank+2);
+			putcomment(s->ec1, blank + 2);
 		for (int i = 0; i < blank + 2; i++)
 			putchar(' ');
 		printf("THEN:\n");
@@ -1182,7 +1193,7 @@ int putsen(SentenceNode *s, int blank)
 		printf("IF条件表达式\n");
 		putexp(s->e1, blank + 2);
 		if (s->ec1)
-			putcomment(s->ec1, blank+2);
+			putcomment(s->ec1, blank + 2);
 		for (int b = 0; b < blank + 2; b++)
 			putchar(' ');
 		printf("THEN:\n");
@@ -1194,7 +1205,7 @@ int putsen(SentenceNode *s, int blank)
 			putchar(' ');
 		printf("ELSE:\n");
 		if (s->ec2)
-			putcomment(s->ec2, blank+2);
+			putcomment(s->ec2, blank + 2);
 		if (s->s2 != NULL)
 			putsen(s->s2, blank + 2);
 		else if (s->c2 != NULL)
