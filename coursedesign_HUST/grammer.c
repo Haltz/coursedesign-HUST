@@ -4,7 +4,6 @@ keyword w;
 FILE *fp;
 char tt[100];
 int err = 0;
-int stop = 0;
 int change(fp)
 {
 	char ch = fgetc(fp);
@@ -12,6 +11,7 @@ int change(fp)
 	{
 		ch = fgetc(fp);
 	}
+	ungetc('\n', fp);
 	return 0;
 }
 char precede[20][20] =
@@ -117,8 +117,7 @@ char type[100][20] =
     "ARRAY"};
 int puterror(int endchar1, int endchar2)
 {
-	printf("error line: %d\n", w.line);
-	char* t = (char*)malloc(sizeof(char) * 100);
+	printf("line:%d\n", w.line);
 	change(fp);
 	w = gettoken(fp);
 	return 1;
@@ -140,14 +139,14 @@ char *getsinglecomment()
 		char c1 = readchar(fp);
 		if (c1 == EOF)
 		{
-			printf("error line: %d\n", w.line);
+			printf("line:%d\n", w.line);
 			change(fp);
 			return NULL;
 		}
 		char c2 = readchar(fp);
 		if (c2 == EOF)
 		{
-			printf("error line: %d\n", w.line);
+			printf("line:%d\n", w.line);
 			return NULL;
 		}
 		while (!(c1 == '*' && c2 == '/'))
@@ -157,7 +156,7 @@ char *getsinglecomment()
 			c2 = readchar(fp);
 			if (c2 == EOF)
 			{
-				printf("error line: %d\n", w.line);
+				printf("line:%d\n", w.line);
 				return NULL;
 			}
 		}
@@ -419,7 +418,7 @@ Child *Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 		else
 			error++;
 	}
-	if (cnt == 1)
+	if (cnt == 1 && error == 0)
 	{
 		num->num = (Child *)malloc(sizeof(Child));
 		num->num->l = num->num->r = NULL;
@@ -427,7 +426,7 @@ Child *Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 		num->num->op = 0;
 		return num->num;
 	}
-	if (num->num != NULL && num->head->head == NULL && num->head->num == NULL && op->op == EXCLA && op->head->head == NULL)
+	if (num->num != NULL && num->head->head == NULL && num->head->num == NULL && op->op == EXCLA && op->head->head == NULL && error == 0)
 	{
 		return num->num;
 	}
@@ -476,12 +475,17 @@ ExternVarDefNode *ExternVarDef()
 	return evd;
 }
 
-FormFactorListNode *FormFactorList() //已经读入了LP done
+FormFactorListNode *FormFactorList(int stop) //已经读入了LP done
 {
 	w = gettoken(fp);
 	if (w.kind != RP && !IsVarDeclare(w))
 	{
-		puterror(RP,EOF_);
+		if (stop == 1)
+		{
+			change(fp);
+			printf("line%d\n", w.line);
+			w = gettoken(fp);
+		}
 		return NULL;
 	}
 	FormFactorListNode *ffl = (FormFactorListNode *)malloc(sizeof(FormFactorListNode));
@@ -498,8 +502,12 @@ FormFactorListNode *FormFactorList() //已经读入了LP done
 		w = gettoken(fp);
 		if (!IsIdent(w) && w.kind != FORMARRAY)
 		{
-			puterror(RP,EOF_);
-			free(ffl);
+			if (stop == 1)
+			{
+				change(fp);
+				printf("line%d\n", w.line);
+				w = gettoken(fp);
+			}
 			return NULL;
 		}
 		strcpy(ffl->ident, w.tokentext);
@@ -507,10 +515,15 @@ FormFactorListNode *FormFactorList() //已经读入了LP done
 	w = gettoken(fp);
 	if (w.kind == COMMA)
 	{
-		ffl->ffl = FormFactorList();
+		ffl->ffl = FormFactorList(stop + 1);
 		if (ffl->ffl == NULL)
 		{
-			puterror(RP,EOF_);
+			if (stop == 1)
+			{
+				change(fp);
+				printf("line%d\n", w.line);
+				w = gettoken(fp);
+			}
 			return NULL;
 		}
 		return ffl;
@@ -524,7 +537,12 @@ FormFactorListNode *FormFactorList() //已经读入了LP done
 	}
 	else
 	{
-		puterror(RP,EOF_);
+		if (stop == 1)
+		{
+			change(fp);
+			printf("line%d\n", w.line);
+			w = gettoken(fp);
+		}
 		return NULL;
 	}
 	return ffl;
@@ -541,41 +559,31 @@ SentenceNode *Sentence()
 		w = gettoken(fp);
 		if (w.kind != LP)
 		{
-			puterror(LP,LCURLY);
-			if (w.kind == LP)
-			{
-				w = gettoken(fp);
-			}
-			return NULL;
+			change(fp);
+			printf("line%d\n", w.line);
+			s->e1 = NULL;
 		}
-		w = gettoken(fp);
-		s->e1 = Expression(RP, 0);
-		if (s->e1 == NULL)
+		else 
 		{
-			stop = 1;
-			puterror(RP,EOF_);
-			return NULL;
-		}
+		    w = gettoken(fp);
+		    s->e1 = Expression(RP, 0);
+			if (s->e1 == NULL)
+			{
+				change(fp);
+				printf("line%d\n", w.line);
+			}
+	    }
 		w = gettoken(fp);
 		s->ec1 = getcomment();
 		if (w.kind != LCURLY)
 		{
 			s->s1 = Sentence();
-			if (s->s1 == NULL)
-			{
-				puterror(EOF_,EOF_);
-				return NULL;
-			}
 			s->c1 = NULL;
 		}
 		else
 		{
 			s->s1 = NULL;
 			s->c1 = Compose();
-			if (s->c1 == NULL)
-			{
-				puterror(RCURLY,EOF_);
-		    }
 			w = gettoken(fp);
 		}
 		if (w.kind == ELSE)
@@ -585,21 +593,12 @@ SentenceNode *Sentence()
 			if (w.kind == LCURLY)
 			{
 				s->c2 = Compose();
-				if (s->c2 == NULL)
-				{
-					puterror(RCURLY,EOF_);
-				}
 				s->s2 = NULL;
 				w = gettoken(fp);
 			}
 			else
 			{
 				s->s2 = Sentence();
-				if (s->s2 == NULL)
-				{
-					puterror(EOF_,EOF_);
-					return NULL;
-				}
 				s->c2 = NULL;
 			}
 			s->kind = ELSE;
@@ -612,7 +611,9 @@ SentenceNode *Sentence()
 		s->e1 = Expression(SEMMI, 0);
 		if (s->e1 == NULL)
 		{
-			puterror(SEMMI,EOF_);
+			change(fp);
+			printf("line%d\n", w.line);
+			w = gettoken(fp);
 			return NULL;
 		}
 		w = gettoken(fp);
@@ -629,8 +630,10 @@ SentenceNode *Sentence()
 		s->e1 = Expression(SEMMI, 0);
 		if (s->e1 == NULL)
 		{
-			puterror(SEMMI, EOF_);
-			return NULL;
+			change(fp);
+			printf("line%d\n", w.line);
+			w = gettoken(fp);
+			return Sentence();
 		}
 		s->s1 = s->s2 = NULL;
 		w = gettoken(fp);
@@ -641,8 +644,10 @@ SentenceNode *Sentence()
 		s->e1 = Expression(SEMMI, 0);
 		if (s->e1 == NULL)
 		{
-			puterror(SEMMI, EOF_);
-			return NULL;
+			change(fp);
+			printf("line%d\n", w.line);
+			w = gettoken(fp);
+			return Sentence();
 		}
 		s->s1 = NULL;
 		s->s2 = NULL;
@@ -650,19 +655,23 @@ SentenceNode *Sentence()
 		break;
 	case WHILE:
 		s->kind = WHILE;
+		s->e2 = s->e3 = NULL;
 		w = gettoken(fp);
 		if (w.kind != LP)
 		{
-			puterror(LCURLY,EOF_);
-			return NULL;
+			change(fp);
+			printf("line%d\n", w.line);
+			s->e1 = NULL;
 		}
-		w = gettoken(fp);
-		s->e1 = Expression(RP, 0);
-		if (s->e1 == NULL || (s->e1->l == NULL && s->e1->r == NULL && s->e1->op == 0))
+		else
 		{
-			stop = 1;
-			puterror(EOF_,EOF_);
-			return NULL;
+			w = gettoken(fp);
+			s->e1 = Expression(RP, 0);
+			if (s->e1 == NULL)
+			{
+				change(fp);
+				printf("line%d\n", w.line);
+			}
 		}
 		w = gettoken(fp);
 		s->ec1 = getcomment();
@@ -688,39 +697,47 @@ SentenceNode *Sentence()
 		w = gettoken(fp);
 		if (w.kind != LP)
 		{
-			printf("error line: %d\n", w.line);
+			change(fp);
 			w = gettoken(fp);
-			err++;
-			return NULL;
+			printf("line%d\n", w.line);
+			s->e1 = s->e2 = s->e3 = NULL;
 		}
-		w = gettoken(fp);
-		s->e1 = Expression(SEMMI, 0);
-		if (s->e1 == NULL)
+		else
 		{
-			printf("error line: %d\n", w.line);
 			w = gettoken(fp);
-			err++;
-			return NULL;
+			s->e1 = Expression(SEMMI, 0);
+			if (s->e1 == NULL)
+			{
+				change(fp);
+				printf("line%d\n", w.line);
+				w = gettoken(fp);
+				s->e2 = s->e3 = NULL;
+			}
+			else
+			{
+				w = gettoken(fp);
+				s->e2 = Expression(SEMMI, 0);
+				if (s->e2 == NULL)
+				{
+					printf("line%d\n", w.line);
+					change(fp);
+					w = gettoken(fp);
+					s->e3 = NULL;
+				}
+				else
+				{
+					w = gettoken(fp);
+					s->e3 = Expression(RP, 0);
+					if (s->e3 == NULL)
+					{
+						printf("line%d\n", w.line);
+						change(fp);
+						w = gettoken(fp);
+					}
+					else w = gettoken(fp);
+				}
+			}
 		}
-		w = gettoken(fp);
-		s->e2 = Expression(SEMMI, 0);
-		if (s->e2 == NULL)
-		{
-			printf("error line: %d\n", w.line);
-			w = gettoken(fp);
-			err++;
-			return NULL;
-		}
-		w = gettoken(fp);
-		s->e3 = Expression(RP, 0);
-		if (s->e3 == NULL)
-		{
-			printf("error line: %d\n", w.line);
-			err++;
-			w = gettoken(fp);
-			return NULL;
-		}
-		w = gettoken(fp);
 		s->ec1 = getcomment();
 		s->ec2 = getcomment();
 		if (w.kind == LCURLY)
@@ -746,9 +763,10 @@ SentenceNode *Sentence()
 		w = gettoken(fp); // get ;
 		if (w.kind != SEMMI)
 		{
-			printf("error line: %d\n", w.line);
+			printf("line:%d\n", w.line);
+			change(fp);
 			w = gettoken(fp);
-			return NULL;
+			return Sentence();
 		}
 		w = gettoken(fp);
 		break;
@@ -760,10 +778,10 @@ SentenceNode *Sentence()
 		w = gettoken(fp); // get ;
 		if (w.kind != SEMMI)
 		{
-			printf("error line: %d\n", w.line);
-			err++;
+			change(fp);
+			printf("line%d\n", w.line);
 			w = gettoken(fp);
-			return NULL;
+			return Sentence();
 		}
 		w = gettoken(fp);
 		break;
@@ -777,6 +795,12 @@ SentenceNode *Sentence()
 		s->s1 = s->s2 = NULL;
 		break;
 	default:
+		if (w.kind != RCURLY)
+		{
+			change(fp);
+			printf("line%d\n", w.line);
+			w = gettoken(fp);
+		}
 		return NULL;
 	}
 	return s;
@@ -803,7 +827,7 @@ LocalVarDefNode *LocalVarDef()
 	w = gettoken(fp);
 	if (!IsIdent(w))
 	{
-		printf("error line: %d\n", w.line);
+		printf("line:%d\n", w.line);
 		w = gettoken(fp);
 		err++;
 		return NULL;
@@ -833,12 +857,11 @@ ComposeNode *Compose()
 	else
 		c->lv = NULL;
 	c->sl = SentenceList();
-	if (w.kind != RCURLY)
+	if (w.kind != RCURLY) 
 	{
-		printf("error line: %d\n", w.line);
+		printf("%d\n", w.line);
+		change(fp);
 		w = gettoken(fp);
-		err++;
-		return NULL;
 	}
 	return c;
 }
@@ -848,7 +871,7 @@ FunDefNode *FunDef(keyword copy)
 {
 	FunDefNode *fd = (FunDefNode *)malloc(sizeof(FunDefNode));
 	strcpy(fd->name, copy.tokentext);
-	fd->ffl = FormFactorList();
+	fd->ffl = FormFactorList(1);
 	if(fd->ffl != NULL) w = gettoken(fp);
 	else return NULL;
 	fd->comment = getcomment();
@@ -858,7 +881,7 @@ FunDefNode *FunDef(keyword copy)
 		fd->c = Compose();
 	else
 	{
-		printf("error line: %d\n", w.line);
+		printf("line:%d\n", w.line);
 		return NULL;
 	}
 	return fd;
@@ -893,7 +916,7 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 			int temp = w.kind;
 			if (w.kind != LESS && w.kind != SINGGLESINGLE)
 			{
-				printf("error line: %d\n", w.line);
+				printf("line:%d\n", w.line);
 				free(a);
 				err++;
 				change(fp);
@@ -910,7 +933,7 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 				{
 					free(edn->di);
 					free(edn);
-					printf("error line: %d\n", w.line);
+					printf("line:%d\n", w.line);
 					change(fp);
 					w = gettoken(fp);
 					err++;
@@ -920,7 +943,7 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 			}
 			if (!((w.kind == SINGGLESINGLE && temp == SINGGLESINGLE) || (w.kind == MORE && temp == LESS)))
 			{
-				printf("error line: %d\n", w.line);
+				printf("line:%d\n", w.line);
 				change(fp);
 				err++;
 				free(edn);
@@ -936,7 +959,7 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 			w = gettoken(fp);
 			if (w.kind != IDENT)
 			{
-				printf("error line: %d\n", w.line);
+				printf("line:%d\n", w.line);
 				free(edn);
 				change(fp);
 				w = gettoken(fp);
@@ -948,7 +971,7 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 			a->val = Expression(SEMMI, 0);
 			if (a->val == NULL)
 			{
-				printf("error line: %d\n", w.line);
+				printf("line:%d\n", w.line);
 				free(edn);
 				change(fp);
 				w = gettoken(fp);
@@ -959,7 +982,7 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 		}
 		else
 		{
-			printf("error line: %d\n", w.line);
+			printf("line:%d\n", w.line);
 			free(edn);
 			change(fp);
 			w = gettoken(fp);
@@ -970,15 +993,22 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 	}
 	if (!IsVarDeclare(w) && w.kind != EOF_)
 	{
-		printf("error line: %d\n", w.line);
-		while (!(IsVarDeclare(w) || w.kind == EOF_ || w.kind == COMMENT || w.kind == LCOMMENT || w.kind == EXCLA))
-			w = gettoken(fp);
+		printf("line:%d\n", w.line);
+		change(fp);
+		w = gettoken(fp);
 		if (w.kind == EOF_)
 			return NULL;
 		else return ExternDef();
 	}
 	edn->kind = w.kind;
 	w = gettoken(fp);
+	if (w.kind != IDENT)
+	{
+		printf("line%d\n", w.line);
+		change(fp);
+		w = gettoken(fp);
+		return ExternDef();
+	}
 	keyword wcopy = w;
 	w = gettoken(fp);
 	if (w.kind == LP)
@@ -1004,10 +1034,10 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 			w = gettoken(fp);
 		else
 		{
-			edn->fd = FunDef(wcopy);
+			printf("line%d\n", w.line);
+			change(fp);
 			w = gettoken(fp);
-			err++;
-			return NULL;
+			return ExternDef();
 		}
 	}
 	return edn;
@@ -1041,7 +1071,7 @@ ExternDefListNode *GraAnalyse(FILE *fp_)
 }
 int putcomment(CommentNode* c, int blank)
 {
-	while(c->com != NULL && strcmp(c->com,"") != 0)
+	while(strcmp(c->com,"") != 0)
 	{
 		for (int b = 0; b < blank; b++)
 			putchar(' ');
@@ -1109,6 +1139,12 @@ int putexp(Child *c, int blank)
 		for (int b = 0; b < blank; b++)
 			putchar(' ');
 		printf("ID:%s 种类:%s\n", c->i, type[c->op]);
+	}
+	if (c->op == 0 && c->l == NULL && c->r == NULL)
+	{
+		for (int b = 0; b < blank; b++)
+			putchar(' ');
+		printf("VOID\n");
 	}
 	return 0;
 }
