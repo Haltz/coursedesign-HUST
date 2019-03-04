@@ -1,7 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include "format.h"
 #include "lex.h"
-#include "grammer.h"
+extern keyword gettoken(FILE *fp);
+extern ExternDefListNode* GraAnalyse(FILE *fp);
+extern int output(ExternDefListNode *root);
+extern int format(FILE* fp);
 char token_name[100][20] =
 	{
 		"ERROR_TOKEN",
@@ -83,24 +85,39 @@ char token_name[100][20] =
 FILE *fp;
 int main()
 {
-	int err = fopen_s(&fp, "test.txt", "r");
+	printf("请输入文件名:");
+	char s[100];
+	scanf("%s", s);
+	int err = fopen_s(&fp, s, "r");
 	if (err != 0)
 	{
 		printf("The file can't be opened.");
 		system("pause");
 		return 0;
 	}
-	/*
-	int line = 0;
-	keyword temp;
-	temp = gettoken(fp);
-	while (temp.kind != ERROR_TOKEN && temp.kind != EOF_)
+	printf("Please choose function:\n1:Lex Analyse     2:Grammer Analyse     3:Format\n");
+	int choice = 0;
+	scanf("%d", &choice);
+	if (choice == 1)
 	{
-		printf("%s %s %d\n", token_name[temp.kind], temp.tokentext, temp.line);
+		keyword temp;
 		temp = gettoken(fp);
+		while (temp.kind != ERROR_TOKEN && temp.kind != EOF_)
+		{
+			printf("%s %s %d\n", token_name[temp.kind], temp.tokentext, temp.line);
+			temp = gettoken(fp);
+		}
 	}
-	*/
-	output(GraAnalyse(fp));
+	else if (choice == 2)
+		output(GraAnalyse(fp));
+	else if (choice == 3)
+		format(fp);
+	else
+	{
+		printf("No such choice\n");
+		return 0;
+	}
+	printf("Done\n");
 	system("pause");
 	return 0;
 }

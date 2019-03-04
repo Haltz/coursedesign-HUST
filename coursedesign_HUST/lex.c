@@ -3,27 +3,27 @@
 char readchar(FILE *fp); //用于方便的读取字符并记录行数
 int findkey(char *st);   //判断是否为关键字
 
-char key_word[][30] =
-	{
-		"int",
-		"float",
-		"char",
-		"void",
-		"long",
-		"short",
-		"bool",
-		"double",
-		"if",
-		"else",
-		"return",
-		"while",
-		"for",
-		"continue",
-		"break",
-		"define",
-		"include"};
-
 int line = 1;
+
+char key_word[][30] =
+{
+	"int",
+	"float",
+	"char",
+	"void",
+	"long",
+	"short",
+	"bool",
+	"double",
+	"if",
+	"else",
+	"return",
+	"while",
+	"for",
+	"continue",
+	"break",
+	"define",
+	"include" };
 
 char readchar(FILE *fp)
 {
@@ -45,13 +45,16 @@ int findkey(char *st)
 keyword gettoken(FILE *fp)
 {
 	keyword ans;
-	int flag = 0;
 	for (int i = 0; i < 20; i++)
 		ans.tokentext[i] = '\0';
 	char ch;
 	//跳过空字符
 	while ((ch = readchar(fp)) == ' ' || ch == '\n' || ch == '\t')
-		;
+	{
+		if (ch == '\n')
+			ans.change = 1;
+		else ans.change = 0;
+	}
 	//数字串 此处十六进制和八进制只支持整数
 	if (ch <= '9' && ch >= '0')
 	{
@@ -69,6 +72,7 @@ keyword gettoken(FILE *fp)
 				if (ch == '0')
 				{
 					ans.kind = ERROR_TOKEN;
+					printf("word line: %d 0x后不应该跟随0\n", line);
 					ungetc(ch, fp);
 				}
 				//未出错
@@ -89,6 +93,7 @@ keyword gettoken(FILE *fp)
 				if (ch == '0' || (ch <= '9'&&ch >= '8'))
 				{
 					ans.kind = ERROR_TOKEN;
+					printf("word line: %d\n  八进制下含有错误的字符\n", line);
 					ungetc(ch, fp);
 				}
 				//未出错
@@ -100,7 +105,10 @@ keyword gettoken(FILE *fp)
 					} while ((ch = readchar(fp)) <= '7' && ch >= '0');
 					ans.kind = INT_CONST;
 					if (ch == '8' || ch == '9')
+					{
+						printf("word line: %d\n  八进制下含有错误的字符\n", line);
 						ans.kind = ERROR_TOKEN;
+					}
 					else ungetc(ch, fp);
 				}
 				else
@@ -130,7 +138,10 @@ keyword gettoken(FILE *fp)
 				ans.kind = FLOAT_CONST;
 			else ungetc(ch, fp);
 			if (fl > 1)
+			{
+				printf("word line: %d\n 包含多个点产生错误\n", line);
 				ans.kind = ERROR_TOKEN;
+			}
 		}
 	}
 	//字符串
@@ -153,13 +164,25 @@ keyword gettoken(FILE *fp)
 		else
 		{
 			char cp = readchar(fp);
-			if (cp == '\n')
-				cp = readchar(fp);
 			if (cp == '[')
 			{
 				ans.tokentext[j++] = '[';
 				//cp = readchar(fp);
-				keyword wp = gettoken(fp);
+				cp = readchar(fp);
+				keyword wp;
+				if (cp != ']') 
+				{ 
+					ungetc(cp, fp); 
+					wp = gettoken(fp); 
+				}
+				else 
+				{
+					ans.kind = FORMARRAY;
+					ans.tokentext[j++] = ']';
+					ans.tokentext[j] = '\0';
+					ans.line = line;
+					return ans;
+				}
 				if (wp.kind == IDENT || wp.kind == INT_CONST || wp.kind == LONG_CONST || wp.kind == SHORT_CONST || wp.kind == ARRAY)
 				{
 					for (int i = 0; i < strlen(wp.tokentext); i++)
@@ -168,6 +191,7 @@ keyword gettoken(FILE *fp)
 					if (cp != ']')
 					{
 						ans.kind = ERROR_TOKEN;
+						printf("word line: %d\n 应该以]作为数组的结束字符\n", line);
 						strcpy(ans.tokentext, "");
 						return ans;
 					}
@@ -183,6 +207,8 @@ keyword gettoken(FILE *fp)
 			else 
 			{
 				ungetc(cp, fp);
+				if (cp == '\n')
+					line--;
 				ans.kind = IDENT;
 				ans.line = line;
 				return ans;
@@ -240,7 +266,10 @@ keyword gettoken(FILE *fp)
 			ans.tokentext[1] = '\0';
 			ch = fgetc(fp);
 			if (ch != '\'')
+			{
+				printf("word line: %d\n  字符的定界符错误\n", line);
 				ans.kind = ERROR_TOKEN;
+			}
 			else
 				ans.kind = CHAR_CONST;
 			break;
@@ -469,6 +498,7 @@ keyword gettoken(FILE *fp)
 			}
 			else
 			{
+				printf("word line: %d\n 错误的未知字符\n", line);
 				ans.kind = ERROR_TOKEN;
 			}
 		}

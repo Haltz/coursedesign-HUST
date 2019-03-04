@@ -1,19 +1,12 @@
 ﻿#include "grammer.h"
-
 keyword w;
 FILE *fp;
 char tt[100];
-int err = 0;
-int change(fp)
-{
-	char ch = fgetc(fp);
-	while (ch != '\n')
-	{
-		ch = fgetc(fp);
-	}
-	ungetc('\n', fp);
-	return 0;
-}
+int err = 0, ppp = 0;
+char funn[100][100];
+char retArrName[32];
+int namei = 0;
+int tline = 0;
 char precede[20][20] =
 	{
 		//+     -    *    /    %    &&   ||   (     )   =    >    <    <=   >=   ==  !=    #
@@ -35,6 +28,116 @@ char precede[20][20] =
 		{'<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '<', '<', '<', '<', '>', '>', '>'}, //!=
 		{'<', '<', '<', '<', '<', '<', '<', '<', ' ', '<', '<', '<', '<', '<', '<', '<', '='}, //#
 };
+
+typedef struct RNL
+{
+	struct RNL *next;
+	struct RNL *last;
+	char var_name[32];
+	enum token_kind var_kind;
+} RNL;
+RNL *root = NULL, **proot = NULL;
+void pushRNL(keyword w, RNL **leaveRNLcur)
+{
+	if (*leaveRNLcur == NULL)
+	{
+		*leaveRNLcur = (RNL *)malloc(sizeof(RNL));
+		RNL *temp = *leaveRNLcur;
+		temp->next = NULL;
+		temp->last = NULL;
+		strcpy(temp->var_name, w.tokentext);
+		temp->var_kind = w.kind;
+		return;
+	}
+	RNL *bufRNL = *leaveRNLcur;
+	RNL *temp = *leaveRNLcur;
+	temp->next = (RNL *)malloc(sizeof(RNL));
+	temp = temp->next;
+	temp->var_kind = w.kind;
+	strcpy(temp->var_name, w.tokentext);
+	temp->last = bufRNL;
+	temp->next = NULL;
+}
+
+RNL *getRNL(RNL *RNLcur)
+{
+	while (RNLcur != NULL && RNLcur->next != NULL)
+		RNLcur = RNLcur->next;
+	if (RNLcur == NULL)
+		return NULL;
+	return RNLcur;
+}
+
+void destroyRNL(RNL *rootRNLcur) //不包括删除rootRNLcur
+{
+	RNL *temp = rootRNLcur;
+	if (rootRNLcur != NULL)
+		rootRNLcur = rootRNLcur->next;
+	while (rootRNLcur != NULL)
+	{
+		RNL *temp = rootRNLcur;
+		rootRNLcur = rootRNLcur->next;
+		free(temp);
+		temp = NULL;
+	}
+	temp->next = NULL;
+	return;
+}
+
+char* getname(keyword w)
+{
+	if (w.kind == FORMARRAY || w.kind == ARRAY)
+	{
+		int j;
+		for (j = 0; j < strlen(w.tokentext); j++)
+		{
+			if (w.tokentext[j] != '[')
+				retArrName[j] = w.tokentext[j];
+		}
+		retArrName[j] = '\0';
+		return retArrName;
+	}
+	return NULL;
+}
+
+int searchRNL(RNL *rootRNLcur, keyword w)
+{
+	char target[32];
+	if (w.kind == FORMARRAY || w.kind == ARRAY)
+	{
+		int j = 0;
+		for (j = 0; w.tokentext[j] != '['; j++)
+			target[j] = w.tokentext[j];
+		target[j] = '\0';
+	}
+	else strcpy(target, w.tokentext);
+	if (rootRNLcur != NULL)
+		rootRNLcur = rootRNLcur->next;
+	while (rootRNLcur != NULL)
+	{
+		int ret;
+		if(rootRNLcur->var_kind != FORMARRAY && rootRNLcur->var_kind != ARRAY)
+			ret= strcmp(rootRNLcur->var_name, target);
+		else 
+		{ 
+			keyword copy;
+			copy.kind = rootRNLcur->var_kind;
+			strcpy(copy.tokentext, rootRNLcur->var_name);
+			getname(copy);
+			ret = strcmp(retArrName, target); 
+		}
+		if (ret == 0)
+			return 1;
+		rootRNLcur = rootRNLcur->next;
+	}
+	return 0;
+}
+
+void erro()
+{
+	err++;
+	return;
+}
 char type[100][20] =
 	{
 		"ERROR_TOKEN",
@@ -115,15 +218,21 @@ char type[100][20] =
 		"Expres",
 		"FUNUSE",
 		"ARRAY"};
-int puterror(int endchar1, int endchar2)
+
+int change(FILE *fp)
 {
-	printf("line:%d\n", w.line);
-	change(fp);
-	w = gettoken(fp);
-	return 1;
+	char ch = fgetc(fp);
+	while (ch != '\n')
+	{
+		ch = fgetc(fp);
+	}
+	ungetc('\n', fp);
+	return 0;
 }
 char *getsinglecomment()
 {
+	if (err)
+		return NULL;
 	char *ans = (char *)malloc(sizeof(char) * 100);
 	if (w.kind == COMMENT)
 	{
@@ -135,18 +244,19 @@ char *getsinglecomment()
 	}
 	if (w.kind == LCOMMENT)
 	{
-		int enter = 0, j = 0;
+		int j = 0;
 		char c1 = readchar(fp);
 		if (c1 == EOF)
 		{
-			printf("line:%d\n", w.line);
-			change(fp);
+			printf("line:%d 文件结束而注释尚未有右界\n", w.line);
+			err++;
 			return NULL;
 		}
 		char c2 = readchar(fp);
 		if (c2 == EOF)
 		{
-			printf("line:%d\n", w.line);
+			printf("line:%d  文件结束而注释尚未有右界\n", w.line);
+			err++;
 			return NULL;
 		}
 		while (!(c1 == '*' && c2 == '/'))
@@ -156,7 +266,8 @@ char *getsinglecomment()
 			c2 = readchar(fp);
 			if (c2 == EOF)
 			{
-				printf("line:%d\n", w.line);
+				printf("line:%d  文件结束而注释尚未有右界\n", w.line);
+				err++;
 				return NULL;
 			}
 		}
@@ -169,6 +280,8 @@ char *getsinglecomment()
 }
 CommentNode *getcomment()
 {
+	if (err)
+		return NULL;
 	CommentNode *c = (CommentNode *)malloc(sizeof(CommentNode));
 	CommentNode *tc = c;
 	char *t;
@@ -201,7 +314,7 @@ typedef struct NumStack
 	struct Child *num;
 } NumStack;
 
-ComposeNode *Compose();
+ComposeNode *Compose(RNL *secroot);
 
 int IsVarDeclare(keyword t) //是否是声明变量的关键字
 {
@@ -277,8 +390,10 @@ NumStack *NumPop(NumStack **pnum)
 }
 
 //表达式结束符号endsym可以是分号，如表达式语句，可以是反小括号，作为条件时使用
-Child *Expression(int EndChar, int tot) // if it's function use, tot = 1, else tot = 0
+Child *Expression(int EndChar, int tot, RNL *secroot) // if it's function use, tot = 1, else tot = 0
 {
+	if (err)
+		return NULL;
 	int cnt = 0;
 	OpStack *op = (OpStack *)malloc(sizeof(OpStack));
 	OpInitiate(op);
@@ -290,22 +405,20 @@ Child *Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 	//int tline = 0;
 	while ((w.kind != EXCLA || op->op != EXCLA) && error == 0)
 	{
-		//w = gettoken(fp);
 		cnt++;
-		/*if (cnt == 1)
-			tline = w.line;
-		if (cnt != 1 && w.line != tline)
-		{
-			int len = strlen(w.tokentext);
-			ungetc(' ', fp);
-			for (int i = len - 1; i >= 0; i--)
-			{
-				ungetc(w.tokentext[i], fp);
-			}
-			return NULL;
-		}*/
+		if (w.kind == COMMA)
+			w.kind = SEMMI;
 		if (IsIdent(w) || IsConst(w))
 		{
+			if (IsIdent(w))
+			{
+				if (!searchRNL(root, w))
+				{
+					printf("line %d 变量未定义\n", w.line);
+					err++;
+					return NULL;
+				}
+			}
 			NumStack *te = (NumStack *)malloc(sizeof(NumStack));
 			te->head = NULL;
 			Child *to = (Child *)malloc(sizeof(Child));
@@ -321,6 +434,17 @@ Child *Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 			w = gettoken(fp);
 			if (flag == 1 && w.kind == LP)
 			{
+				for (int i = 0; i <= ppp; i++)
+				{
+					if (i == ppp)
+					{
+						printf("line%d 函数未声明\n", w.line);
+						err++;
+						return NULL;
+					}
+					if (strcmp(to->i, funn[i]) == 0)
+						break;
+				}
 				w = gettoken(fp);
 				Child *f = (Child *)malloc(sizeof(Child));
 				strcpy(f->i, to->i);
@@ -332,7 +456,7 @@ Child *Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 					if (count != 0)
 						w = gettoken(fp);
 					if (IsIdent(w))
-						fcopy->l = Expression(RP, 1);
+						fcopy->l = Expression(RP, 1, root);
 					else
 						fcopy->l = NULL;
 					if (fcopy != f)
@@ -431,7 +555,7 @@ Child *Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 					error = 1;
 			}
 		}
-		else if (w.kind == EndChar || (w.kind == COMMA && tot == 1))
+		else if (w.kind == EndChar || (w.kind == SEMMI && tot == 1))
 			w.kind = EXCLA;
 		else
 			error++;
@@ -454,19 +578,54 @@ Child *Expression(int EndChar, int tot) // if it's function use, tot = 1, else t
 	}
 }
 
-VarListNode *VarList() //已经读入了第一个变量 done 会读入下一个字符 显示了错误
+VarListNode *VarList(RNL *secroot) //已经读入了第一个变量 done 会读入下一个字符 显示了错误
 {
+	if (err)
+		return NULL;
 	if ((!IsIdent(w)) && w.kind != ARRAY)
 	{
-		puterror(SEMMI, EOF_);
+		err++;
+		printf("line %d 错误的标识符\n",w.line);
 		return NULL;
 	}
 	VarListNode *vl = (VarListNode *)malloc(sizeof(VarListNode));
 	strcpy(vl->ident, w.tokentext);
+	if (secroot == root)
+	{
+		if (searchRNL(secroot, w))
+		{
+			printf("line %d 重复定义变量\n", w.line);
+			err++;
+			return NULL;
+		}
+		RNL* pushed = getRNL(secroot);
+		pushRNL(w, &pushed);
+	}
 	w = gettoken(fp);
+	//处理初始化
+	if (w.kind == ASSIGN)
+	{
+		w = gettoken(fp);
+		vl->initial = Expression(SEMMI, 0, root);
+		if (vl->initial == NULL)
+			return NULL;
+		else if (strcmp(vl->initial->i, "void") == 0)
+		{
+			printf("line %d 初始化错误\n", w.line);
+			err++;
+			return NULL;
+		}
+		if (strcmp(w.tokentext, ",") == 0)
+			w.kind = COMMA;
+		else if (strcmp(w.tokentext, ";") == 0)
+			w.kind = SEMMI;
+		if (err) return NULL;
+	}
+	else vl->initial = NULL;
 	if (w.kind != COMMA && w.kind != SEMMI)
 	{
-		puterror(SEMMI, EOF_);
+		err++;
+		printf("line %d 结束符错误\n", tline);
 		return NULL;
 	}
 	if (w.kind == SEMMI)
@@ -476,7 +635,15 @@ VarListNode *VarList() //已经读入了第一个变量 done 会读入下一个�
 		return vl;
 	}
 	w = gettoken(fp);
-	vl->vl = VarList();
+	if (searchRNL(secroot, w))
+	{
+		printf("line %d 重复定义变量\n", w.line);
+		err++;
+		return NULL;
+	}
+	RNL* tpushed = getRNL(secroot);
+	pushRNL(w, &tpushed);
+	vl->vl = VarList(secroot);
 	if (vl->vl == NULL)
 		return NULL;
 	return vl;
@@ -485,29 +652,34 @@ VarListNode *VarList() //已经读入了第一个变量 done 会读入下一个�
 //变量名保存在tokenText0中，这时外部变量定义的处理流程可参考如下。done
 ExternVarDefNode *ExternVarDef()
 {
+	tline = w.line;
+	if (err)
+		return NULL;
 	ExternVarDefNode *evd = (ExternVarDefNode *)malloc(sizeof(ExternVarDefNode));
 	evd->kind = w.kind;
-	evd->vl = VarList();
+	evd->vl = VarList(root);
 	if (evd->vl == NULL)
 		return NULL;
 	return evd;
 }
 
-FormFactorListNode *FormFactorList(int stop) //已经读入了LP done
+FormFactorListNode *FormFactorList(int stop, RNL *secroot) //已经读入了LP done
 {
+	if (err)
+		return NULL;
 	w = gettoken(fp);
 	if (w.kind != RP && !IsVarDeclare(w))
 	{
 		if (stop == 1)
 		{
-			change(fp);
-			printf("line%d\n", w.line);
-			w = gettoken(fp);
+			printf("line%d  形参列表错误\n ", w.line);
+			err++;
+			return NULL;
 		}
 		return NULL;
 	}
 	FormFactorListNode *ffl = (FormFactorListNode *)malloc(sizeof(FormFactorListNode));
-	if (w.kind == RP || w.kind == VOID)
+	if (w.kind == RP)
 	{
 		ffl->kind = 0;
 		ffl->ffl = NULL;
@@ -522,25 +694,33 @@ FormFactorListNode *FormFactorList(int stop) //已经读入了LP done
 		{
 			if (stop == 1)
 			{
-				change(fp);
-				printf("line%d\n", w.line);
-				w = gettoken(fp);
+				err++;
+				printf("line%d 形参列表错误\n", w.line);
+				return NULL;
 			}
 			return NULL;
 		}
+		if (searchRNL(secroot, w))
+		{
+			printf("line:%d  重复定义标识符\n", w.line);
+			err++;
+			return NULL;
+		}
+		RNL *pushed = getRNL(secroot);
+		pushRNL(w, &pushed);
 		strcpy(ffl->ident, w.tokentext);
 	}
 	w = gettoken(fp);
 	if (w.kind == COMMA)
 	{
-		ffl->ffl = FormFactorList(stop + 1);
+		ffl->ffl = FormFactorList(stop + 1, secroot);
 		if (ffl->ffl == NULL)
 		{
 			if (stop == 1)
 			{
-				change(fp);
-				printf("line%d\n", w.line);
-				w = gettoken(fp);
+				err++;
+				printf("line%d  形参列表错误\n", w.line);
+				return NULL;
 			}
 			return NULL;
 		}
@@ -557,9 +737,9 @@ FormFactorListNode *FormFactorList(int stop) //已经读入了LP done
 	{
 		if (stop == 1)
 		{
-			change(fp);
-			printf("line%d\n", w.line);
-			w = gettoken(fp);
+			err++;
+			printf("line%d  形参列表错误\n", w.line);
+			return NULL;
 		}
 		return NULL;
 	}
@@ -568,8 +748,11 @@ FormFactorListNode *FormFactorList(int stop) //已经读入了LP done
 
 //调用此子程序时，语句的第一个单词已经读入，处理一条语句时，
 //根据这条语句的第一个单词，确定处理什么类型的语句。 done
-SentenceNode *Sentence()
+SentenceNode *Sentence(RNL *secroot)
 {
+	if (err > 0)
+		return NULL;
+	int tline = w.line;
 	SentenceNode *s = (SentenceNode *)malloc(sizeof(SentenceNode));
 	switch (w.kind)
 	{
@@ -577,31 +760,34 @@ SentenceNode *Sentence()
 		w = gettoken(fp);
 		if (w.kind != LP)
 		{
-			change(fp);
-			printf("line%d\n", w.line);
-			s->e1 = NULL;
+			printf("line%d\n  没有左括弧\n", tline);
+			err++;
+			return NULL;
 		}
 		else
 		{
 			w = gettoken(fp);
-			s->e1 = Expression(RP, 0);
+			s->e1 = Expression(RP, 0, root);
 			if (s->e1 == NULL)
 			{
-				change(fp);
-				printf("line%d\n", w.line);
+				err++;
+				printf("line%d  条件表达式错误\n", w.line);
+				return NULL;
 			}
 		}
 		w = gettoken(fp);
 		s->ec1 = getcomment();
 		if (w.kind != LCURLY)
 		{
-			s->s1 = Sentence();
+			s->s1 = Sentence(secroot);
 			s->c1 = NULL;
 		}
 		else
 		{
 			s->s1 = NULL;
-			s->c1 = Compose();
+			RNL *temp = getRNL(secroot);
+			s->c1 = Compose(temp);
+			destroyRNL(temp);
 			w = gettoken(fp);
 		}
 		if (w.kind == ELSE)
@@ -610,13 +796,15 @@ SentenceNode *Sentence()
 			s->ec2 = getcomment(); //else+comment
 			if (w.kind == LCURLY)
 			{
-				s->c2 = Compose();
+				RNL *temp = getRNL(secroot);
+				s->c2 = Compose(temp);
+				destroyRNL(temp);
 				s->s2 = NULL;
 				w = gettoken(fp);
 			}
 			else
 			{
-				s->s2 = Sentence();
+				s->s2 = Sentence(secroot);
 				s->c2 = NULL;
 			}
 			s->kind = ELSE;
@@ -626,12 +814,11 @@ SentenceNode *Sentence()
 		break;
 	case LP:
 		s->kind = Expres;
-		s->e1 = Expression(SEMMI, 0);
+		s->e1 = Expression(SEMMI, 0, secroot);
 		if (s->e1 == NULL)
 		{
-			change(fp);
-			printf("line%d\n", w.line);
-			w = gettoken(fp);
+			err++;
+			printf("line%d 表达式错误\n", tline);
 			return NULL;
 		}
 		w = gettoken(fp);
@@ -645,13 +832,12 @@ SentenceNode *Sentence()
 	case DOUBLE_CONST:
 	case SHORT_CONST:
 		s->kind = Expres;
-		s->e1 = Expression(SEMMI, 0);
+		s->e1 = Expression(SEMMI, 0, secroot);
 		if (s->e1 == NULL)
 		{
-			change(fp);
-			printf("line%d\n", w.line);
-			w = gettoken(fp);
-			return Sentence();
+			err++;
+			printf("line%d  表达式错误\n", tline);
+			return NULL;
 		}
 		s->s1 = s->s2 = NULL;
 		w = gettoken(fp);
@@ -659,13 +845,12 @@ SentenceNode *Sentence()
 	case RETURN:
 		s->kind = RETURN;
 		w = gettoken(fp);
-		s->e1 = Expression(SEMMI, 0);
+		s->e1 = Expression(SEMMI, 0, secroot);
 		if (s->e1 == NULL)
 		{
-			change(fp);
-			printf("line%d\n", w.line);
-			w = gettoken(fp);
-			return Sentence();
+			err++;
+			printf("line%d  表达式错误\n", tline);
+			return NULL;
 		}
 		s->s1 = NULL;
 		s->s2 = NULL;
@@ -677,18 +862,19 @@ SentenceNode *Sentence()
 		w = gettoken(fp);
 		if (w.kind != LP)
 		{
-			change(fp);
-			printf("line%d\n", w.line);
-			s->e1 = NULL;
+			err++;
+			printf("line%d  没有左括弧\n", tline);
+			return NULL;
 		}
 		else
 		{
 			w = gettoken(fp);
-			s->e1 = Expression(RP, 0);
+			s->e1 = Expression(RP, 0, root);
 			if (s->e1 == NULL)
 			{
-				change(fp);
-				printf("line%d\n", w.line);
+				err++;
+				printf("line%d  条件表达式错误\n", tline);
+				return NULL;
 			}
 		}
 		w = gettoken(fp);
@@ -699,14 +885,16 @@ SentenceNode *Sentence()
 			s->c1 = NULL;
 			s->c2 = NULL;
 			s->s2 = NULL;
-			s->s1 = Sentence();
+			s->s1 = Sentence(secroot);
 		}
 		else
 		{
 			s->s1 = NULL;
 			s->s2 = NULL;
 			s->c2 = NULL;
-			s->c1 = Compose();
+			RNL *temp = getRNL(secroot);
+			s->c1 = Compose(temp);
+			destroyRNL(temp);
 			w = gettoken(fp);
 		}
 		break;
@@ -715,42 +903,39 @@ SentenceNode *Sentence()
 		w = gettoken(fp);
 		if (w.kind != LP)
 		{
-			change(fp);
-			w = gettoken(fp);
-			printf("line%d\n", w.line);
-			s->e1 = s->e2 = s->e3 = NULL;
+			err++;
+			printf("line%d  没有左括弧\n", tline);
+			return NULL;
 		}
 		else
 		{
 			w = gettoken(fp);
-			s->e1 = Expression(SEMMI, 0);
+			s->e1 = Expression(SEMMI, 0, secroot);
 			if (s->e1 == NULL)
 			{
-				change(fp);
-				printf("line%d\n", w.line);
-				w = gettoken(fp);
-				s->e2 = s->e3 = NULL;
+				printf("line%d  条件表达式错误\n", tline);
+				err++;
+				return NULL;
 			}
 			else
 			{
 				w = gettoken(fp);
-				s->e2 = Expression(SEMMI, 0);
+				s->e2 = Expression(SEMMI, 0, secroot);
 				if (s->e2 == NULL)
 				{
-					printf("line%d\n", w.line);
-					change(fp);
-					w = gettoken(fp);
+					printf("line%d  条件表达式错误\n", tline);
+					err++;
 					s->e3 = NULL;
 				}
 				else
 				{
 					w = gettoken(fp);
-					s->e3 = Expression(RP, 0);
+					s->e3 = Expression(RP, 0, root);
 					if (s->e3 == NULL)
 					{
-						printf("line%d\n", w.line);
-						change(fp);
-						w = gettoken(fp);
+						printf("line%d  条件表达式错误\n", tline);
+						err++;
+						return NULL;
 					}
 					else
 						w = gettoken(fp);
@@ -763,13 +948,15 @@ SentenceNode *Sentence()
 		{
 			s->s1 = s->s2 = NULL;
 			s->c2 = NULL;
-			s->c1 = Compose();
+			RNL *temp = getRNL(secroot);
+			s->c1 = Compose(temp);
+			destroyRNL(temp);
 			w = gettoken(fp);
 			//w = gettoken(fp);
 		}
 		else
 		{
-			s->s1 = Sentence();
+			s->s1 = Sentence(secroot);
 			s->s2 = NULL;
 			s->c1 = s->c2 = NULL;
 		}
@@ -782,10 +969,9 @@ SentenceNode *Sentence()
 		w = gettoken(fp); // get ;
 		if (w.kind != SEMMI)
 		{
-			printf("line:%d\n", w.line);
-			change(fp);
-			w = gettoken(fp);
-			return Sentence();
+			printf("line:%d 没有分号结束\n", tline);
+			err++;
+			return NULL;
 		}
 		w = gettoken(fp);
 		break;
@@ -797,10 +983,9 @@ SentenceNode *Sentence()
 		w = gettoken(fp); // get ;
 		if (w.kind != SEMMI)
 		{
-			change(fp);
-			printf("line%d\n", w.line);
-			w = gettoken(fp);
-			return Sentence();
+			printf("line:%d 没有分号结束\n", tline);
+			err++;
+			return NULL;
 		}
 		w = gettoken(fp);
 		break;
@@ -816,44 +1001,56 @@ SentenceNode *Sentence()
 	default:
 		if (w.kind != RCURLY)
 		{
-			change(fp);
-			printf("line%d\n", w.line);
-			w = gettoken(fp);
+			err++;
+			printf("line%d  没有右大括号\n", tline);
+			return NULL;
 		}
 		return NULL;
 	}
 	return s;
 }
 
-SentenceListNode *SentenceList() //done
+SentenceListNode *SentenceList(RNL* secroot) //done
 {
-	SentenceNode *s = Sentence();
+	if (err)
+		return NULL;
+	SentenceNode *s = Sentence(secroot);
 	if (s == NULL)
 		return NULL;
 	else
 	{
 		SentenceListNode *sl = (SentenceListNode *)malloc(sizeof(SentenceListNode));
 		sl->s = s;
-		sl->sl = SentenceList();
+		sl->sl = SentenceList(secroot);
 		return sl;
 	}
 }
 
-LocalVarDefNode *LocalVarDef()
+LocalVarDefNode *LocalVarDef(RNL *secroot)
 {
+	tline = w.line;
+	if (err)
+		return NULL;
 	LocalVarDefNode *lvd = (LocalVarDefNode *)malloc(sizeof(LocalVarDefNode));
 	strcpy(lvd->TypeStatement, w.tokentext);
 	w = gettoken(fp);
 	if (!IsIdent(w))
 	{
 		printf("line:%d\n", w.line);
-		w = gettoken(fp);
 		err++;
 		return NULL;
 	}
-	lvd->vln = VarList();
+	if (searchRNL(secroot, w))
+	{
+		printf("line %d 重复定义变量\n", w.line);
+		err++;
+		return NULL;
+	}
+	RNL *pushed = getRNL(secroot);
+	pushRNL(w, &pushed);
+	lvd->vln = VarList(secroot);
 	if (IsVarDeclare(w))
-		lvd->lvd = LocalVarDef();
+		lvd->lvd = LocalVarDef(secroot);
 	else
 	{
 		lvd->lvd = (LocalVarDefNode *)malloc(sizeof(LocalVarDefNode));
@@ -865,44 +1062,63 @@ LocalVarDefNode *LocalVarDef()
 }
 
 //调用此子程序时，已经读入了单词{，继续处理时，遇到遇到}，结束复合语句
-ComposeNode *Compose()
+ComposeNode *Compose(RNL *secroot)
 {
+	if (err)
+		return NULL;
 	ComposeNode *c = (ComposeNode *)malloc(sizeof(ComposeNode));
 	w = gettoken(fp);
 	if (IsVarDeclare(w))
 	{
-		c->lv = LocalVarDef();
+		c->lv = LocalVarDef(secroot);
 	}
 	else
 		c->lv = NULL;
-	c->sl = SentenceList();
+	if (err > 0)
+		return NULL;
+	c->sl = SentenceList(secroot);
 	if (w.kind != RCURLY)
 	{
-		printf("%d\n", w.line);
-		change(fp);
+		printf("line%d 没有右大括号\n", w.line);
+		err++;
 		w = gettoken(fp);
 	}
 	return c;
 }
 
 //调用此子程序时，函数返回值类型和函数名，正小括号的单词已经读入，函数名保存在tokenText0中 done
+//has push fun name into rnl
 FunDefNode *FunDef(keyword copy)
 {
+	if (err)
+		return NULL;
 	FunDefNode *fd = (FunDefNode *)malloc(sizeof(FunDefNode));
 	strcpy(fd->name, copy.tokentext);
-	fd->ffl = FormFactorList(1);
+	strcpy(funn[ppp++], copy.tokentext);
+	RNL *formfact = getRNL(root);
+	pushRNL(copy, &formfact);
+	formfact = getRNL(root);
+	fd->ffl = FormFactorList(1, formfact);
+	destroyRNL(formfact);
 	if (fd->ffl != NULL)
 		w = gettoken(fp);
 	else
+	{
 		return NULL;
+	}
 	fd->comment = getcomment();
 	if (w.kind == SEMMI)
 		fd->c = NULL;
 	else if (w.kind == LCURLY)
-		fd->c = Compose();
+	{
+		RNL *temp = getRNL(root);
+		fd->c = Compose(temp);
+		destroyRNL(temp);
+	}
 	else
 	{
-		printf("line:%d\n", w.line);
+		printf("line:%d  不符合条件的字符\n", w.line);
+		err++;
 		return NULL;
 	}
 	return fd;
@@ -912,13 +1128,17 @@ FunDefNode *FunDef(keyword copy)
 //该子程序处理完后，刚好处理到外部定义的最后一个符号，后续单词还没读入。
 ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树根结点指针，否则返回NULL done
 {
+	if (err)
+		return NULL;
 	ExternDefNode *edn = (ExternDefNode *)malloc(sizeof(ExternDefNode));
-	edn->comment = edn->di = edn->evd = edn->fd = NULL;
+	edn->comment = NULL;
+	edn->di = NULL;
+	edn->evd = NULL;
+	edn->fd = NULL;
 	edn->kind = 0;
 	if (w.kind == COMMENT || w.kind == LCOMMENT)
 	{
 		edn->comment = getcomment();
-		edn->di = edn->evd = edn->fd = NULL;
 		edn->kind = COMMENT;
 		return edn;
 	}
@@ -926,8 +1146,6 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 	{
 		edn->di = (Def_includeNode *)malloc(sizeof(Def_includeNode));
 		Def_includeNode *a = edn->di;
-		edn->evd = NULL;
-		edn->fd = NULL;
 		edn->kind = ERROR_TOKEN;
 		w = gettoken(fp);
 		if (w.kind == INCLUDE)
@@ -937,11 +1155,9 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 			int temp = w.kind;
 			if (w.kind != LESS && w.kind != SINGGLESINGLE)
 			{
-				printf("line:%d\n", w.line);
+				printf("line:%d  错误的定界符\n", w.line);
 				free(a);
 				err++;
-				change(fp);
-				w = gettoken(fp);
 				return NULL;
 			}
 			w = gettoken(fp);
@@ -954,9 +1170,7 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 				{
 					free(edn->di);
 					free(edn);
-					printf("line:%d\n", w.line);
-					change(fp);
-					w = gettoken(fp);
+					printf("line:%d\n  没有.h\n", w.line);
 					err++;
 					return NULL;
 				}
@@ -964,8 +1178,7 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 			}
 			if (!((w.kind == SINGGLESINGLE && temp == SINGGLESINGLE) || (w.kind == MORE && temp == LESS)))
 			{
-				printf("line:%d\n", w.line);
-				change(fp);
+				printf("line:%d\n  错误的定界符", w.line);
 				err++;
 				free(edn);
 				w = gettoken(fp);
@@ -980,23 +1193,31 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 			w = gettoken(fp);
 			if (w.kind != IDENT)
 			{
-				printf("line:%d\n", w.line);
+				printf("line:%d\n  错误的标识符", w.line);
 				free(edn);
-				change(fp);
 				w = gettoken(fp);
 				err++;
 				return NULL;
 			}
 			strcpy(a->ident, w.tokentext);
+			if (searchRNL(root, w))
+			{
+				printf("line:%d\n  重复定义标识符", w.line);
+				free(edn);
+				err++;
+				return NULL;
+			}
+			pushRNL(w, &root);
 			w = gettoken(fp);
 			int tline = w.line;
-			a->val = Expression(SEMMI, 0);
+			a->val = Expression(SEMMI, 0, root);
 			if (a->val == NULL)
 			{
 				if (w.line != tline)
 				{
-					printf("line:%d\n", tline);
+					printf("line:%d  表达式错误\n ", tline);
 				}
+				else printf("line:%d  表达式错误\n ", w.line);
 				free(edn);
 				err++;
 				return NULL;
@@ -1005,10 +1226,8 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 		}
 		else
 		{
-			printf("line:%d\n", w.line);
+			printf("line:%d  错误的外部变量定义\n", w.line);
 			free(edn);
-			change(fp);
-			w = gettoken(fp);
 			err++;
 			return NULL;
 		}
@@ -1016,22 +1235,32 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 	}
 	if (!IsVarDeclare(w) && w.kind != EOF_)
 	{
-		printf("line:%d\n", w.line);
-		change(fp);
-		w = gettoken(fp);
-		if (w.kind == EOF_)
-			return NULL;
-		else
-			return ExternDef();
+		printf("line:%d  错误的类型声明\n", w.line);
+		err++;
+		return NULL;
 	}
 	edn->kind = w.kind;
+	tline = w.line;
 	w = gettoken(fp);
 	if (w.kind != IDENT)
 	{
-		printf("line%d\n", w.line);
-		change(fp);
-		w = gettoken(fp);
-		return ExternDef();
+		printf("line%d  错误的标识符\n", w.line);
+		err++;
+		return NULL;
+	}
+	if (searchRNL(root, w))
+	{
+		printf("line:%d\n  重复定义标识符", w.line);
+		free(edn);
+		err++;
+		return NULL;
+	}
+	if(root==NULL)
+	pushRNL(w, &root);
+	else
+	{
+		RNL* temp = getRNL(root);
+		pushRNL(w, &temp);
 	}
 	keyword wcopy = w;
 	w = gettoken(fp);
@@ -1049,19 +1278,36 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 		strcpy(edn->evd->ident, wcopy.tokentext);
 		edn->evd->vl = NULL;
 		edn->fd = NULL;
+		if (w.kind == ASSIGN)
+		{
+			w = gettoken(fp);
+			edn->evd->initial = Expression(SEMMI, 0, root);
+			if (edn->evd->initial == NULL)
+				return NULL;
+			else if (strcmp(edn->evd->initial->i, "void") == 0)
+			{
+				printf("line %d 初始化错误\n", w.line);
+				err++;
+				return NULL;
+			}
+			if (strcmp(w.tokentext, ",") == 0)
+				w.kind = COMMA;
+			if (strcmp(w.tokentext, ";") == 0)
+				w.kind = SEMMI;
+		}
+		else edn->evd->initial = NULL;
 		if (w.kind == COMMA)
 		{
 			w = gettoken(fp);
-			edn->evd->vl = VarList();
+			edn->evd->vl = VarList(root);
 		}
 		else if (w.kind == SEMMI)
 			w = gettoken(fp);
 		else
 		{
-			printf("line%d\n", w.line);
-			change(fp);
-			w = gettoken(fp);
-			return ExternDef();
+			printf("line%d  少了结束符号\n", tline);
+			err++;
+			return NULL;
 		}
 	}
 	return edn;
@@ -1073,6 +1319,8 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 //在一个源程序中，每次成功处理完一个外部定义后，如果遇到文件结束标记，则语法分析结束。调用此子程序，已经读入了一个外部定义的第一个单词到w中。
 ExternDefListNode *ExternDefList() // 外部定义序列 done
 {
+	if (err)
+		return NULL;
 	if (w.kind == EOF_)
 		return NULL;
 	ExternDefListNode *root = (ExternDefListNode *)malloc(sizeof(ExternDefListNode)); //生成一个外部定义序列结点root
@@ -1091,7 +1339,9 @@ ExternDefListNode *GraAnalyse(FILE *fp_)
 {
 	fp = fp_;
 	w = gettoken(fp);
-	return ExternDefList();
+	ExternDefListNode *root = ExternDefList();
+	fclose(fp);
+	return root;
 }
 int putcomment(CommentNode *c, int blank)
 {
@@ -1111,10 +1361,20 @@ int putvarlist(VarListNode *v)
 	if (v == NULL)
 		return -1;
 	printf("%s ", v->ident);
+	if (v->initial != NULL)
+	{
+		printf("初始化值为 ");
+		putexp(v->initial, 0);
+	}
 	v = v->vl;
 	while (v != NULL && v->ident[0] != '\0')
 	{
 		printf(",%s", v->ident);
+		if (v->initial != NULL)
+		{
+			printf("初始化值为 ");
+			putexp(v->initial, 0);
+		}
 		v = v->vl;
 	}
 	return 0;
@@ -1135,6 +1395,7 @@ int putexp(Child *c, int blank)
 		while (cc->l != NULL)
 		{
 			putexp(cc->l, blank + 2);
+			printf("\n");
 			cc = cc->r;
 		}
 	}
@@ -1144,14 +1405,20 @@ int putexp(Child *c, int blank)
 			putchar(' ');
 		printf("%s\n", type[c->op]);
 		if (c->l != NULL)
+		{
 			putexp(c->l, blank + 2);
+			printf("\n");
+		}
 		else
 		{
 			printf("ERROR!\n");
 			return -1;
 		}
 		if (c->r != NULL)
+		{
 			putexp(c->r, blank + 2);
+			printf("\n");
+		}
 		else
 		{
 			printf("ERROR!\n");
@@ -1162,7 +1429,7 @@ int putexp(Child *c, int blank)
 	{
 		for (int b = 0; b < blank; b++)
 			putchar(' ');
-		printf("ID:%s 种类:%s\n", c->i, type[c->op]);
+		printf("ID:%s 种类:%s", c->i, type[c->op]);
 	}
 	if (c->op == 0 && c->l == NULL && c->r == NULL)
 	{
@@ -1187,6 +1454,7 @@ int putsen(SentenceNode *s, int blank)
 			putchar(' ');
 		printf("IF条件表达式:\n");
 		putexp(s->e1, blank + 2);
+		printf("\n");
 		if (s->ec1)
 			putcomment(s->ec1, blank + 2);
 		for (int i = 0; i < blank + 2; i++)
@@ -1205,6 +1473,7 @@ int putsen(SentenceNode *s, int blank)
 			putchar(' ');
 		printf("IF条件表达式\n");
 		putexp(s->e1, blank + 2);
+		printf("\n");
 		if (s->ec1)
 			putcomment(s->ec1, blank + 2);
 		for (int b = 0; b < blank + 2; b++)
@@ -1232,12 +1501,14 @@ int putsen(SentenceNode *s, int blank)
 			putchar(' ');
 		printf("返回表达式:\n");
 		putexp(s->e1, blank + 4);
+		printf("\n");
 		break;
 	case Expres:
 		for (int b = 0; b < blank; b++)
 			putchar(' ');
 		printf("表达式:\n");
 		putexp(s->e1, blank + 2);
+		printf("\n");
 		break;
 	case WHILE:
 		for (int b = 0; b < blank; b++)
@@ -1247,6 +1518,7 @@ int putsen(SentenceNode *s, int blank)
 			putchar(' ');
 		printf("WHILE循环条件表达式:\n");
 		putexp(s->e1, blank + 4);
+		printf("\n");
 		if (s->ec1)
 			putcomment(s->ec1, blank);
 		for (int b = 0; b < blank + 2; b++)
@@ -1265,10 +1537,12 @@ int putsen(SentenceNode *s, int blank)
 			putchar(' ');
 		printf("初始化:\n");
 		putexp(s->e1, blank + 4);
+		printf("\n");
 		for (int b = 0; b < blank + 2; b++)
 			putchar(' ');
 		printf("条件表达式:\n");
 		putexp(s->e2, blank + 4);
+		printf("\n");
 		for (int b = 0; b < blank + 2; b++)
 			putchar(' ');
 		printf("变化:\n");
@@ -1335,12 +1609,10 @@ int putcompose(ComposeNode *c, int blank)
 }
 int output(ExternDefListNode *root)
 {
-	//if (err > 0)
-	//	return 0;
-	int blank = 0;
+	if (err)
+		return 0;
 	if (root == NULL)
 	{
-		printf("NO WORD!\n");
 		return 0;
 	}
 	ExternDefListNode *edl = root;
@@ -1386,6 +1658,7 @@ int output(ExternDefListNode *root)
 				printf("标识符:%s\n", t->ident);
 				printf("值:\n");
 				putexp(t->val, 2);
+				printf("\n");
 			}
 			if (t->kind == INCLUDE)
 			{

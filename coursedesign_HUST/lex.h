@@ -6,13 +6,6 @@
 #include <string.h>
 #include <malloc.h>
 
-typedef struct Keyword
-{
-	char tokentext[20];
-	enum token_kind kind;
-	int line;
-} keyword;
-
 enum token_kind
 {
 	//文件结束
@@ -111,7 +104,18 @@ enum token_kind
 	FORMARRAY
 };
 
+
+typedef struct Keyword
+{
+	char tokentext[20];
+	enum token_kind kind;
+	int line;
+	int change;
+} keyword;
+
+
 keyword gettoken(FILE *fp); //获取单词并返回它的类型，值
+char readchar(FILE *fp);
 //char* getcomment(FILE* fp);
 
 #endif // DEBUG

@@ -24,12 +24,18 @@
     <ClCompile Include="grammer.c">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="format.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="lex.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="grammer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="format.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

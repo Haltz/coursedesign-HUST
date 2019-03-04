@@ -1,11 +1,11 @@
 #ifndef GRAMMER_H_
 #define GRAMMER_H_
 
+#include "lex.h"
+#include <malloc.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <malloc.h>
-#include "lex.h"
 
 typedef struct CommentNode
 {
@@ -22,6 +22,7 @@ typedef struct Child
 typedef struct VarListNode
 {
 	char ident[20];
+	Child* initial;
 	struct VarListNode *vl;
 } VarListNode;
 typedef struct SentenceNode
