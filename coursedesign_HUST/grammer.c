@@ -1,12 +1,26 @@
 ﻿#include "grammer.h"
-keyword w;
-FILE *fp;
-char tt[100];
-int err = 0, ppp = 0;
-char funn[100][100];
-char retArrName[32];
-int namei = 0;
-int tline = 0;
+
+typedef struct RNL
+{
+	struct RNL *next;
+	struct RNL *last;
+	char var_name[32];
+	enum token_kind var_kind;
+} RNL;
+RNL *root = NULL, **proot = NULL;
+
+typedef struct OpStack
+{
+	struct OpStack *head;
+	enum token_kind op;
+} OpStack;
+
+typedef struct NumStack
+{
+	struct NumStack *head;
+	struct Child *num;
+} NumStack;
+
 char precede[20][20] =
 	{
 		//+     -    *    /    %    &&   ||   (     )   =    >    <    <=   >=   ==  !=    #
@@ -28,116 +42,6 @@ char precede[20][20] =
 		{'<', '<', '<', '<', '<', '>', '>', '<', '>', ' ', '<', '<', '<', '<', '>', '>', '>'}, //!=
 		{'<', '<', '<', '<', '<', '<', '<', '<', ' ', '<', '<', '<', '<', '<', '<', '<', '='}, //#
 };
-
-typedef struct RNL
-{
-	struct RNL *next;
-	struct RNL *last;
-	char var_name[32];
-	enum token_kind var_kind;
-} RNL;
-RNL *root = NULL, **proot = NULL;
-void pushRNL(keyword w, RNL **leaveRNLcur)
-{
-	if (*leaveRNLcur == NULL)
-	{
-		*leaveRNLcur = (RNL *)malloc(sizeof(RNL));
-		RNL *temp = *leaveRNLcur;
-		temp->next = NULL;
-		temp->last = NULL;
-		strcpy(temp->var_name, w.tokentext);
-		temp->var_kind = w.kind;
-		return;
-	}
-	RNL *bufRNL = *leaveRNLcur;
-	RNL *temp = *leaveRNLcur;
-	temp->next = (RNL *)malloc(sizeof(RNL));
-	temp = temp->next;
-	temp->var_kind = w.kind;
-	strcpy(temp->var_name, w.tokentext);
-	temp->last = bufRNL;
-	temp->next = NULL;
-}
-
-RNL *getRNL(RNL *RNLcur)
-{
-	while (RNLcur != NULL && RNLcur->next != NULL)
-		RNLcur = RNLcur->next;
-	if (RNLcur == NULL)
-		return NULL;
-	return RNLcur;
-}
-
-void destroyRNL(RNL *rootRNLcur) //不包括删除rootRNLcur
-{
-	RNL *temp = rootRNLcur;
-	if (rootRNLcur != NULL)
-		rootRNLcur = rootRNLcur->next;
-	while (rootRNLcur != NULL)
-	{
-		RNL *temp = rootRNLcur;
-		rootRNLcur = rootRNLcur->next;
-		free(temp);
-		temp = NULL;
-	}
-	temp->next = NULL;
-	return;
-}
-
-char* getname(keyword w)
-{
-	if (w.kind == FORMARRAY || w.kind == ARRAY)
-	{
-		int j;
-		for (j = 0; j < strlen(w.tokentext); j++)
-		{
-			if (w.tokentext[j] != '[')
-				retArrName[j] = w.tokentext[j];
-		}
-		retArrName[j] = '\0';
-		return retArrName;
-	}
-	return NULL;
-}
-
-int searchRNL(RNL *rootRNLcur, keyword w)
-{
-	char target[32];
-	if (w.kind == FORMARRAY || w.kind == ARRAY)
-	{
-		int j = 0;
-		for (j = 0; w.tokentext[j] != '['; j++)
-			target[j] = w.tokentext[j];
-		target[j] = '\0';
-	}
-	else strcpy(target, w.tokentext);
-	if (rootRNLcur != NULL)
-		rootRNLcur = rootRNLcur->next;
-	while (rootRNLcur != NULL)
-	{
-		int ret;
-		if(rootRNLcur->var_kind != FORMARRAY && rootRNLcur->var_kind != ARRAY)
-			ret= strcmp(rootRNLcur->var_name, target);
-		else 
-		{ 
-			keyword copy;
-			copy.kind = rootRNLcur->var_kind;
-			strcpy(copy.tokentext, rootRNLcur->var_name);
-			getname(copy);
-			ret = strcmp(retArrName, target); 
-		}
-		if (ret == 0)
-			return 1;
-		rootRNLcur = rootRNLcur->next;
-	}
-	return 0;
-}
-
-void erro()
-{
-	err++;
-	return;
-}
 char type[100][20] =
 	{
 		"ERROR_TOKEN",
@@ -219,14 +123,201 @@ char type[100][20] =
 		"FUNUSE",
 		"ARRAY"};
 
-int change(FILE *fp)
+//用来保存获得的词法单元
+keyword w;
+//保存文件指针
+FILE *fp;
+//err：错误个数
+//ppp：声明的函数个数
+int err = 0, ppp = 0;
+//函数声明的数组
+char funn[100][100];
+//注册表相关结构，保存返回的数组标识符
+char retArrName[32];
+//保存当前语句开始时的行数
+int tline = 0;
+
+//将一个标识符加入注册表，表示该标识符已被使用
+void pushRNL(keyword, RNL **);
+//获取当前注册表的头指针
+RNL *getRNL(RNL *);
+//删除当前作用域的所有注册过的标识符
+//不包括删除rootRNLcur
+void destroyRNL(RNL *);
+//获得数组的名称，方便与其他标识符进行比较
+//原因在于数组的tokentext为name[]或者name[10]这种形式，无法与标识符进行比较
+char *getname(keyword);
+//在当前作用域下查询该标识符是否被使用过
+int searchRNL(RNL *rootRNLcur, keyword);
+//过去单个注释，即以//开头的一行或者以/*开头以*/结尾的一段
+char *getsinglecomment();
+//获取所有注释，生成注释的链表，防止注释跟随注释
+CommentNode *getcomment();
+//判断该词法单元是否是类型说明符
+int IsVarDeclare(keyword);
+//判断该词法单元是否是标识符
+int IsIdent(keyword);
+//判断该词法单元是否是常数
+int IsConst(keyword);
+//初始化操作符栈
+int OpInitiate(OpStack *);
+//将操作符推入栈
+int OpPush(int, OpStack **);
+//将操作符推出栈
+int OpPop(OpStack **);
+//初始化操作数栈
+int NumInitiate(NumStack *);
+//将操作数推入栈
+int NumPush(NumStack *, NumStack **);
+//将操作数出栈
+NumStack *NumPop(NumStack **);
+
+//语法分析程序的开始程序
+//对于一个程序，按其语法定义：	<程序> ：：=<外部定义序列>
+//语法单位<程序>的子程序如下，完成的功能是生成一棵语法树，根指针指向的是一个外部定义序列的结点。
+ExternDefListNode *GraAnalyse(FILE *);
+//外部定义序列
+//语法单位<外部定义序列>的定义：
+//<外部定义序列>：： = <外部定义> <外部定义序列> | <外部定义>
+//这是一个递归定义，该子程序处理一系列的外部定义，每个外部定义序列的结点，其第一个子树对应一个外部定义，第二棵子树对应后续的外部定义。
+//在一个源程序中，每次成功处理完一个外部定义后，如果遇到文件结束标记，则语法分析结束。调用此子程序，已经读入了一个外部定义的第一个单词到w中。
+ExternDefListNode *ExternDefList();
+//外部定义
+//此子程序完成一个外部定义的处理，调用此子程序时，已经读入了一个外部定义的第一个单词到w中。
+//该子程序处理完后，刚好处理到外部定义的最后一个符号，后续单词还没读入。
+//处理外部定义序列，正确时，返回子树根结点指针，否则返回NULL 
+ExternDefNode *ExternDef();
+//外部变量定义
+//调用此子程序时，外部变量类型和第一个变量名的单词已经读入，
+//变量名保存在tokenText0中，这时外部变量定义的处理流程可参考如下。
+ExternVarDefNode *ExternVarDef();
+//生成变量列表节点
+VarListNode *VarList(RNL *);
+//生成函数定义或函数声明节点
+//调用此子程序时，函数返回值类型和函数名，正小括号的单词已经读入，函数名保存在tokenText0中 done
+//has push fun name into rnl
+FunDefNode *FunDef(keyword);
+//生成形参序列节点
+//已经读入了LP done
+FormFactorListNode *FormFactorList(int, RNL *);
+//生成复合语句节点
+//调用此子程序时，已经读入了单词{，继续处理时，遇到遇到}，结束复合语句
+ComposeNode *Compose(RNL *);
+//生成局部变量定义节点
+LocalVarDefNode *LocalVarDef(RNL *);
+//生成语句序列节点
+SentenceListNode *SentenceList(RNL *);
+//生成语句节点
+//调用此子程序时，语句的第一个单词已经读入，处理一条语句时，
+//根据这条语句的第一个单词，确定处理什么类型的语句。 
+SentenceNode *Sentence(RNL *);
+//生成表达式节点
+//表达式结束符号endsym可以是分号，如表达式语句，可以是反小括号，作为条件时使用
+Child *Expression(int, int, RNL*);
+
+//输出语法树
+int output(ExternDefListNode *);
+//输出复合语句结构
+int putcompose(ComposeNode *, int);
+//输出语句结构
+int putsen(SentenceNode *, int);
+//输出表达式结构
+int putexp(Child *, int);
+//输出变量列表结构
+int putvarlist(VarListNode *);
+//输出注释结构
+int putcomment(CommentNode *, int);
+
+void pushRNL(keyword w, RNL **leaveRNLcur)
 {
-	char ch = fgetc(fp);
-	while (ch != '\n')
+	if (*leaveRNLcur == NULL)
 	{
-		ch = fgetc(fp);
+		*leaveRNLcur = (RNL *)malloc(sizeof(RNL));
+		RNL *temp = *leaveRNLcur;
+		temp->next = NULL;
+		temp->last = NULL;
+		strcpy(temp->var_name, w.tokentext);
+		temp->var_kind = w.kind;
+		return;
 	}
-	ungetc('\n', fp);
+	RNL *bufRNL = *leaveRNLcur;
+	RNL *temp = *leaveRNLcur;
+	temp->next = (RNL *)malloc(sizeof(RNL));
+	temp = temp->next;
+	temp->var_kind = w.kind;
+	strcpy(temp->var_name, w.tokentext);
+	temp->last = bufRNL;
+	temp->next = NULL;
+}
+RNL *getRNL(RNL *RNLcur)
+{
+	while (RNLcur != NULL && RNLcur->next != NULL)
+		RNLcur = RNLcur->next;
+	if (RNLcur == NULL)
+		return NULL;
+	return RNLcur;
+}
+void destroyRNL(RNL *rootRNLcur) 
+{
+	RNL *temp = rootRNLcur;
+	if (rootRNLcur != NULL)
+		rootRNLcur = rootRNLcur->next;
+	while (rootRNLcur != NULL)
+	{
+		RNL *temp = rootRNLcur;
+		rootRNLcur = rootRNLcur->next;
+		free(temp);
+		temp = NULL;
+	}
+	temp->next = NULL;
+	return;
+}
+char *getname(keyword w)
+{
+	if (w.kind == FORMARRAY || w.kind == ARRAY)
+	{
+		int j;
+		for (j = 0; j < strlen(w.tokentext); j++)
+		{
+			if (w.tokentext[j] != '[')
+				retArrName[j] = w.tokentext[j];
+		}
+		retArrName[j] = '\0';
+		return retArrName;
+	}
+	return NULL;
+}
+int searchRNL(RNL *rootRNLcur, keyword w)
+{
+	char target[32];
+	if (w.kind == FORMARRAY || w.kind == ARRAY)
+	{
+		int j = 0;
+		for (j = 0; w.tokentext[j] != '['; j++)
+			target[j] = w.tokentext[j];
+		target[j] = '\0';
+	}
+	else
+		strcpy(target, w.tokentext);
+	if (rootRNLcur != NULL)
+		rootRNLcur = rootRNLcur->next;
+	while (rootRNLcur != NULL)
+	{
+		int ret;
+		if (rootRNLcur->var_kind != FORMARRAY && rootRNLcur->var_kind != ARRAY)
+			ret = strcmp(rootRNLcur->var_name, target);
+		else
+		{
+			keyword copy;
+			copy.kind = rootRNLcur->var_kind;
+			strcpy(copy.tokentext, rootRNLcur->var_name);
+			getname(copy);
+			ret = strcmp(retArrName, target);
+		}
+		if (ret == 0)
+			return 1;
+		rootRNLcur = rootRNLcur->next;
+	}
 	return 0;
 }
 char *getsinglecomment()
@@ -301,29 +392,13 @@ CommentNode *getcomment()
 	strcpy(tc->com, "");
 	return c;
 }
-
-typedef struct OpStack
-{
-	struct OpStack *head;
-	enum token_kind op;
-} OpStack;
-
-typedef struct NumStack
-{
-	struct NumStack *head;
-	struct Child *num;
-} NumStack;
-
-ComposeNode *Compose(RNL *secroot);
-
-int IsVarDeclare(keyword t) //是否是声明变量的关键字
+int IsVarDeclare(keyword t) 
 {
 	if (t.kind <= DOUBLE && t.kind >= INT)
 		return 1;
 	else
 		return 0;
 }
-
 int IsIdent(keyword t)
 {
 	if (t.kind == IDENT || t.kind == ARRAY)
@@ -331,7 +406,6 @@ int IsIdent(keyword t)
 	else
 		return 0;
 }
-
 int IsConst(keyword t)
 {
 	if (t.kind >= INT_CONST && t.kind <= DOUBLE_CONST)
@@ -341,7 +415,7 @@ int IsConst(keyword t)
 int OpInitiate(OpStack *op)
 {
 	op->head = NULL;
-	op->op = 0;
+	op->op = ERROR_TOKEN;
 	return 0;
 }
 int OpPush(int to, OpStack **pnow)
@@ -389,8 +463,8 @@ NumStack *NumPop(NumStack **pnum)
 	return res;
 }
 
-//表达式结束符号endsym可以是分号，如表达式语句，可以是反小括号，作为条件时使用
-Child *Expression(int EndChar, int tot, RNL *secroot) // if it's function use, tot = 1, else tot = 0
+// if it's function use, tot = 1, else tot = 0
+Child *Expression(int EndChar, int tot, RNL *secroot) 
 {
 	if (err)
 		return NULL;
@@ -490,16 +564,17 @@ Child *Expression(int EndChar, int tot, RNL *secroot) // if it's function use, t
 			Child *p = (Child *)malloc(sizeof(Child));
 			switch (precede[op->op - PLUS][w.kind - PLUS])
 			{
+				//higher priority
 			case '<':
 				xxx = (OpStack *)malloc(sizeof(OpStack));
 				xxx->op = w.kind;
 				xxx->head = op;
 				op = xxx;
-				//OpPush(w.kind, &op);
 				w = gettoken(fp);
 				free(n);
 				free(p);
 				break;
+				//erase right paren
 			case '=':
 				if (op->head->head == NULL)
 					error++;
@@ -511,6 +586,7 @@ Child *Expression(int EndChar, int tot, RNL *secroot) // if it's function use, t
 				free(p);
 				w = gettoken(fp);
 				break;
+				//lower priority
 			case '>':
 				if (num->num != NULL)
 				{
@@ -560,6 +636,7 @@ Child *Expression(int EndChar, int tot, RNL *secroot) // if it's function use, t
 		else
 			error++;
 	}
+	//special case for void value
 	if (cnt == 1 && error == 0)
 	{
 		num->num = (Child *)malloc(sizeof(Child));
@@ -568,6 +645,7 @@ Child *Expression(int EndChar, int tot, RNL *secroot) // if it's function use, t
 		num->num->op = 0;
 		return num->num;
 	}
+	//whether only one num is left
 	if (num->num != NULL && num->head->head == NULL && num->head->num == NULL && op->op == EXCLA && op->head->head == NULL && error == 0)
 	{
 		return num->num;
@@ -585,7 +663,7 @@ VarListNode *VarList(RNL *secroot) //已经读入了第一个变量 done 会读�
 	if ((!IsIdent(w)) && w.kind != ARRAY)
 	{
 		err++;
-		printf("line %d 错误的标识符\n",w.line);
+		printf("line %d 错误的标识符\n", w.line);
 		return NULL;
 	}
 	VarListNode *vl = (VarListNode *)malloc(sizeof(VarListNode));
@@ -598,7 +676,7 @@ VarListNode *VarList(RNL *secroot) //已经读入了第一个变量 done 会读�
 			err++;
 			return NULL;
 		}
-		RNL* pushed = getRNL(secroot);
+		RNL *pushed = getRNL(secroot);
 		pushRNL(w, &pushed);
 	}
 	w = gettoken(fp);
@@ -619,9 +697,11 @@ VarListNode *VarList(RNL *secroot) //已经读入了第一个变量 done 会读�
 			w.kind = COMMA;
 		else if (strcmp(w.tokentext, ";") == 0)
 			w.kind = SEMMI;
-		if (err) return NULL;
+		if (err)
+			return NULL;
 	}
-	else vl->initial = NULL;
+	else
+		vl->initial = NULL;
 	if (w.kind != COMMA && w.kind != SEMMI)
 	{
 		err++;
@@ -641,15 +721,14 @@ VarListNode *VarList(RNL *secroot) //已经读入了第一个变量 done 会读�
 		err++;
 		return NULL;
 	}
-	RNL* tpushed = getRNL(secroot);
+	RNL *tpushed = getRNL(secroot);
 	pushRNL(w, &tpushed);
 	vl->vl = VarList(secroot);
 	if (vl->vl == NULL)
 		return NULL;
 	return vl;
 }
-//调用此子程序时，外部变量类型和第一个变量名的单词已经读入，
-//变量名保存在tokenText0中，这时外部变量定义的处理流程可参考如下。done
+
 ExternVarDefNode *ExternVarDef()
 {
 	tline = w.line;
@@ -663,7 +742,7 @@ ExternVarDefNode *ExternVarDef()
 	return evd;
 }
 
-FormFactorListNode *FormFactorList(int stop, RNL *secroot) //已经读入了LP done
+FormFactorListNode *FormFactorList(int stop, RNL *secroot) 
 {
 	if (err)
 		return NULL;
@@ -746,8 +825,7 @@ FormFactorListNode *FormFactorList(int stop, RNL *secroot) //已经读入了LP d
 	return ffl;
 }
 
-//调用此子程序时，语句的第一个单词已经读入，处理一条语句时，
-//根据这条语句的第一个单词，确定处理什么类型的语句。 done
+
 SentenceNode *Sentence(RNL *secroot)
 {
 	if (err > 0)
@@ -1010,7 +1088,7 @@ SentenceNode *Sentence(RNL *secroot)
 	return s;
 }
 
-SentenceListNode *SentenceList(RNL* secroot) //done
+SentenceListNode *SentenceList(RNL *secroot) //done
 {
 	if (err)
 		return NULL;
@@ -1060,8 +1138,6 @@ LocalVarDefNode *LocalVarDef(RNL *secroot)
 	}
 	return lvd;
 }
-
-//调用此子程序时，已经读入了单词{，继续处理时，遇到遇到}，结束复合语句
 ComposeNode *Compose(RNL *secroot)
 {
 	if (err)
@@ -1085,9 +1161,6 @@ ComposeNode *Compose(RNL *secroot)
 	}
 	return c;
 }
-
-//调用此子程序时，函数返回值类型和函数名，正小括号的单词已经读入，函数名保存在tokenText0中 done
-//has push fun name into rnl
 FunDefNode *FunDef(keyword copy)
 {
 	if (err)
@@ -1124,9 +1197,8 @@ FunDefNode *FunDef(keyword copy)
 	return fd;
 }
 
-//此子程序完成一个外部定义的处理，调用此子程序时，已经读入了一个外部定义的第一个单词到w中。
-//该子程序处理完后，刚好处理到外部定义的最后一个符号，后续单词还没读入。
-ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树根结点指针，否则返回NULL done
+
+ExternDefNode *ExternDef() 
 {
 	if (err)
 		return NULL;
@@ -1217,7 +1289,8 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 				{
 					printf("line:%d  表达式错误\n ", tline);
 				}
-				else printf("line:%d  表达式错误\n ", w.line);
+				else
+					printf("line:%d  表达式错误\n ", w.line);
 				free(edn);
 				err++;
 				return NULL;
@@ -1255,11 +1328,11 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 		err++;
 		return NULL;
 	}
-	if(root==NULL)
-	pushRNL(w, &root);
+	if (root == NULL)
+		pushRNL(w, &root);
 	else
 	{
-		RNL* temp = getRNL(root);
+		RNL *temp = getRNL(root);
 		pushRNL(w, &temp);
 	}
 	keyword wcopy = w;
@@ -1295,7 +1368,8 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 			if (strcmp(w.tokentext, ";") == 0)
 				w.kind = SEMMI;
 		}
-		else edn->evd->initial = NULL;
+		else
+			edn->evd->initial = NULL;
 		if (w.kind == COMMA)
 		{
 			w = gettoken(fp);
@@ -1313,10 +1387,7 @@ ExternDefNode *ExternDef() //处理外部定义序列，正确时，返回子树
 	return edn;
 }
 
-//语法单位<外部定义序列>的定义：
-//<外部定义序列>：： = <外部定义> <外部定义序列> | <外部定义>
-//这是一个递归定义，该子程序处理一系列的外部定义，每个外部定义序列的结点，其第一个子树对应一个外部定义，第二棵子树对应后续的外部定义。
-//在一个源程序中，每次成功处理完一个外部定义后，如果遇到文件结束标记，则语法分析结束。调用此子程序，已经读入了一个外部定义的第一个单词到w中。
+
 ExternDefListNode *ExternDefList() // 外部定义序列 done
 {
 	if (err)
@@ -1333,8 +1404,7 @@ ExternDefListNode *ExternDefList() // 外部定义序列 done
 	return root;
 }
 
-//对于一个程序，按其语法定义：	<程序> ：：=<外部定义序列>
-//语法单位<程序>的子程序如下，完成的功能是生成一棵语法树，根指针指向的是一个外部定义序列的结点。
+
 ExternDefListNode *GraAnalyse(FILE *fp_)
 {
 	fp = fp_;
@@ -1355,7 +1425,6 @@ int putcomment(CommentNode *c, int blank)
 	}
 	return 0;
 }
-int putcompose(ComposeNode *c, int blank);
 int putvarlist(VarListNode *v)
 {
 	if (v == NULL)

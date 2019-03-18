@@ -82,6 +82,7 @@ char ttype[100][20] =
 		"FUNUSE",
 		"ARRAY"};
 
+//根据参数类型名可判断输出内容
 int putedn_(ExternDefNode *edn);			//输出回车
 int putexp_(Child *root);					//不输出回车
 int putcom_(ComposeNode *root, int blank);  //输出回车

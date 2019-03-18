@@ -1,9 +1,9 @@
 #include "format.h"
 #include "lex.h"
 extern keyword gettoken(FILE *fp);
-extern ExternDefListNode* GraAnalyse(FILE *fp);
+extern ExternDefListNode *GraAnalyse(FILE *fp);
 extern int output(ExternDefListNode *root);
-extern int format(FILE* fp);
+extern int format(FILE *fp);
 char token_name[100][20] =
 	{
 		"ERROR_TOKEN",
@@ -81,8 +81,11 @@ char token_name[100][20] =
 		"LMOVEEQ",
 		"RMOVEEQ",
 		"LCOMMENT",
-		"Expres"};
+		"Expres"
+	};
+
 FILE *fp;
+
 int main()
 {
 	printf("请输入文件名:");

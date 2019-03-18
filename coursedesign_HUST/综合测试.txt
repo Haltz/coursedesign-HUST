@@ -34,7 +34,6 @@ int main()
     int a,c,x;
     f5(f5(c, a, x), a, x);
     //test
-    ttttt = (((a > c) + (a >= c) - (a < c)) + (a <= c)) + (a && b) != (a || b);
     if (a > c && ((a < c || a >= c) || a <= c)) //test
     {
         if (a != c && (a == c || a))

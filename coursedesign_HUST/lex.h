@@ -6,6 +6,7 @@
 #include <string.h>
 #include <malloc.h>
 
+//词法单元种类
 enum token_kind
 {
 	//文件结束
@@ -104,7 +105,7 @@ enum token_kind
 	FORMARRAY
 };
 
-
+//词法单元结构
 typedef struct Keyword
 {
 	char tokentext[20];
@@ -113,9 +114,9 @@ typedef struct Keyword
 	int change;
 } keyword;
 
-
+//获取词法单元函数
 keyword gettoken(FILE *fp); //获取单词并返回它的类型，值
+//读取字符，同时变更行数
 char readchar(FILE *fp);
-//char* getcomment(FILE* fp);
 
 #endif // DEBUG

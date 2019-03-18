@@ -3,6 +3,7 @@
 
 #include "grammer.h"
 
+//∏Ò ΩªØ
 int format(FILE* fp);
 
 #endif

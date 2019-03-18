@@ -1,0 +1,17 @@
+int
+float
+char
+void
+long
+short
+bool
+double
+if
+else
+return
+while
+for
+continue
+break
+define
+include

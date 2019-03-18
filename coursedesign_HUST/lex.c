@@ -1,29 +1,33 @@
 #include "lex.h"
 
+keyword gettoken(FILE *fp);
+
 char readchar(FILE *fp); //用于方便的读取字符并记录行数
 int findkey(char *st);   //判断是否为关键字
 
+//行数计数器
 int line = 1;
 
+//关键字种类
 char key_word[][30] =
-{
-	"int",
-	"float",
-	"char",
-	"void",
-	"long",
-	"short",
-	"bool",
-	"double",
-	"if",
-	"else",
-	"return",
-	"while",
-	"for",
-	"continue",
-	"break",
-	"define",
-	"include" };
+	{
+		"int",
+		"float",
+		"char",
+		"void",
+		"long",
+		"short",
+		"bool",
+		"double",
+		"if",
+		"else",
+		"return",
+		"while",
+		"for",
+		"continue",
+		"break",
+		"define",
+		"include"};
 
 char readchar(FILE *fp)
 {
@@ -53,7 +57,8 @@ keyword gettoken(FILE *fp)
 	{
 		if (ch == '\n')
 			ans.change = 1;
-		else ans.change = 0;
+		else
+			ans.change = 0;
 	}
 	//数字串 此处十六进制和八进制只支持整数
 	if (ch <= '9' && ch >= '0')
@@ -87,10 +92,10 @@ keyword gettoken(FILE *fp)
 				}
 			}
 			//八进制
-			else 
+			else
 			{
 				//出错
-				if (ch == '0' || (ch <= '9'&&ch >= '8'))
+				if (ch == '0' || (ch <= '9' && ch >= '8'))
 				{
 					ans.kind = ERROR_TOKEN;
 					printf("word line: %d\n  八进制下含有错误的字符\n", line);
@@ -109,7 +114,8 @@ keyword gettoken(FILE *fp)
 						printf("word line: %d\n  八进制下含有错误的字符\n", line);
 						ans.kind = ERROR_TOKEN;
 					}
-					else ungetc(ch, fp);
+					else
+						ungetc(ch, fp);
 				}
 				else
 				{
@@ -122,21 +128,25 @@ keyword gettoken(FILE *fp)
 		//十进制
 		else
 		{
-			int fl = 0;//判断是小数还是整数
+			int fl = 0; //判断是小数还是整数
 			do
 			{
 				ans.tokentext[j++] = ch;
-				if (ch == '.') fl++;
-			} while ((ch = readchar(fp)) == '.' || (ch <= '9'&&ch >= '0'));
-			if (fl == 0) ans.kind = INT_CONST;
-			else if(fl == 1) ans.kind = DOUBLE_CONST;
+				if (ch == '.')
+					fl++;
+			} while ((ch = readchar(fp)) == '.' || (ch <= '9' && ch >= '0'));
+			if (fl == 0)
+				ans.kind = INT_CONST;
+			else if (fl == 1)
+				ans.kind = DOUBLE_CONST;
 			if (ch == 'L' && ans.kind == INT_CONST)
 				ans.kind = LONG_CONST;
-			else if (ch == 'S' &&  ans.kind == INT_CONST)
+			else if (ch == 'S' && ans.kind == INT_CONST)
 				ans.kind = SHORT_CONST;
 			else if (ch == 'f' && ans.kind == DOUBLE_CONST)
 				ans.kind = FLOAT_CONST;
-			else ungetc(ch, fp);
+			else
+				ungetc(ch, fp);
 			if (fl > 1)
 			{
 				printf("word line: %d\n 包含多个点产生错误\n", line);
@@ -155,7 +165,7 @@ keyword gettoken(FILE *fp)
 		if (ch == '\n')
 			line--;
 		ungetc(ch, fp);
-		if ((ans.kind = findkey(ans.tokentext)) != 0)
+		if ((ans.kind = findkey(ans.tokentext)) != ERROR_TOKEN)
 		{
 			strcpy(ans.tokentext, key_word[ans.kind - 2]);
 			ans.line = line;
@@ -163,59 +173,56 @@ keyword gettoken(FILE *fp)
 		} //判断是否是关键字
 		else
 		{
-			char cp = readchar(fp);
-			if (cp == '[')
+			ch = readchar(fp);
+			if (ch == '[')
 			{
 				ans.tokentext[j++] = '[';
 				//cp = readchar(fp);
-				cp = readchar(fp);
+				ch = readchar(fp);
 				keyword wp;
-				if (cp != ']') 
-				{ 
-					ungetc(cp, fp); 
-					wp = gettoken(fp); 
+				if (ch != ']')
+				{
+					ungetc(ch, fp);
+					wp = gettoken(fp);
 				}
-				else 
+				else
 				{
 					ans.kind = FORMARRAY;
 					ans.tokentext[j++] = ']';
 					ans.tokentext[j] = '\0';
-					ans.line = line;
 					return ans;
 				}
 				if (wp.kind == IDENT || wp.kind == INT_CONST || wp.kind == LONG_CONST || wp.kind == SHORT_CONST || wp.kind == ARRAY)
 				{
 					for (int i = 0; i < strlen(wp.tokentext); i++)
 						ans.tokentext[j++] = wp.tokentext[i];
-					cp = readchar(fp);
-					if (cp != ']')
+					ch = readchar(fp);
+					if (ch != ']')
 					{
 						ans.kind = ERROR_TOKEN;
 						printf("word line: %d\n 应该以]作为数组的结束字符\n", line);
 						strcpy(ans.tokentext, "");
 						return ans;
 					}
-					else 
+					else
 					{
 						ans.tokentext[j++] = ']';
 						ans.tokentext[j++] = '\0';
-						ans.kind = ARRAY; 
+						ans.kind = ARRAY;
+						return ans;
 					}
 				}
 			}
 			//表示是一个普通的标识符
-			else 
+			else
 			{
-				ungetc(cp, fp);
-				if (cp == '\n')
-					line--;
+				ungetc(ch, fp);
 				ans.kind = IDENT;
-				ans.line = line;
-				return ans;
 			}
 		}
 	}
 	else
+		//ch为运算符或特殊字符
 		switch (ch)
 		{
 		case '(':
@@ -251,7 +258,7 @@ keyword gettoken(FILE *fp)
 			strcpy(ans.tokentext, "#");
 			break;
 		case '%':
-			ans.kind = PERCENT;
+			ans.kind = MOD;
 			strcpy(ans.tokentext, "%");
 			break;
 		case '\\':
@@ -259,7 +266,7 @@ keyword gettoken(FILE *fp)
 			strcpy(ans.tokentext, "\\");
 			break;
 		case '\'':
-			ch = fgetc(fp);
+			ch = readchar(fp);
 			if (ch == '\\')
 				ch = fgetc(fp);
 			ans.tokentext[0] = ch;
@@ -502,8 +509,10 @@ keyword gettoken(FILE *fp)
 				ans.kind = ERROR_TOKEN;
 			}
 		}
+		if (ch == '\n')
+			line--;
 	if (ans.kind == ERROR_TOKEN)
-		printf("word line: %d\n",line);
+		printf("word line: %d\n", line);
 	ans.line = line;
 	return ans;
 }
